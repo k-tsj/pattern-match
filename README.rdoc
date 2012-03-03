@@ -1,0 +1,26 @@
+= pattern-match
+== About
+A pattern matching library for Ruby.
+
+==  Installation
+ $ git clone git://github.com/k-tsj/pattern-match.git
+ $ cd pattern-match
+ $ gem build pattern-match.gemspec
+ $ gem install pattern-match-*.gem
+
+or
+
+ $ gem install bundler (if you need)
+ $ echo "gem 'pattern-match', :git => 'git://github.com/k-tsj/pattern-match.git'" > Gemfile
+ $ bundle install --path vendor/bundle
+
+== Example
+See test/test_pattern-match.rb.
+
+== Development
+ $ git clone git://github.com/k-tsj/pattern-match.git
+ $ cd pattern-match
+ $ gem install bundler (if you need)
+ $ bundle install --path vendor/bundle
+ $ rake test (or simply type "rake")
+ $ rake build
