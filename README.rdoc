@@ -24,3 +24,5 @@ See test/test_pattern-match.rb.
  $ bundle install --path vendor/bundle
  $ rake test (or simply type "rake")
  $ rake build
+
+== Travis Build Status {<img src="https://secure.travis-ci.org/k-tsj/pattern-match.png"/>}[http://travis-ci.org/k-tsj/pattern-match]
