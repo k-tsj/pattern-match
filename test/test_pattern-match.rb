@@ -289,6 +289,16 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
+  def test_extractor_class_rational
+    match(Rational(0, 1)) {
+      with(Rational.(a, b)) {
+        assert_equal(0, a)
+        assert_equal(1, b)
+      }
+      with(_) { flunk }
+    }
+  end
+
   def test_extractor_class_matchdata
     m = /.../.match('abc')
     match(m) {

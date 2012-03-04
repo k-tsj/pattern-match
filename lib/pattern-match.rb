@@ -68,6 +68,13 @@ module PatternMatch
       end
     end
 
+    refine Rational.singleton_class do
+      def extract(val)
+        accept_self_instance_only(val)
+        [val.numerator, val.denominator]
+      end
+    end
+
     refine MatchData.singleton_class do
       def extract(val)
         accept_self_instance_only(val)
