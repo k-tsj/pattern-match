@@ -52,8 +52,8 @@ class TestPatternMatch < Test::Unit::TestCase
   end
 
   def test_uscore
-    match([0, 1]) {
-      with(_[_, ! _(Float)]) {
+    match([0, 1, Fixnum]) {
+      with(_[_, ! _(Float), _(Fixnum, :==)]) {
         assert_raise(NameError) { _ }
       }
       with(_) { flunk }

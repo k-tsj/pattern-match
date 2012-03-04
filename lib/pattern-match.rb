@@ -322,13 +322,14 @@ module PatternMatch
   end
 
   class PatternValue < Pattern
-    def initialize(val)
+    def initialize(val, compare_by = :===)
       super()
       @val = val
+      @compare_by = compare_by
     end
 
     def match(val)
-      @val === val
+      @val.send(@compare_by, val)
     end
   end
 
@@ -431,6 +432,8 @@ module PatternMatch
         uscore
       when 1
         PatternValue.new(vals[0])
+      when 2
+        PatternValue.new(vals[0], vals[1])
       else
         raise MalformedPatternError
       end
