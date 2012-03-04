@@ -279,6 +279,16 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
+  def test_extractor_class_complex
+    match(Complex(0, 1)) {
+      with(Complex.(a, b)) {
+        assert_equal(0, a)
+        assert_equal(1, b)
+      }
+      with(_) { flunk }
+    }
+  end
+
   def test_extractor_obj_regexp
     match('abc') {
       with(/./.(a)) { flunk }

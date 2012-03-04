@@ -61,6 +61,13 @@ module PatternMatch
       end
     end
 
+    refine Complex.singleton_class do
+      def extract(val)
+        accept_self_instance_only(val)
+        val.rect
+      end
+    end
+
     if SUPPORT_REFINEMENTS
       def Struct.method_added(name)
         if name == members[0]
