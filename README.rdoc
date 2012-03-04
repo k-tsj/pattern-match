@@ -17,21 +17,23 @@ or
 == Example
  require 'pattern-match'
 
- # (A)
+ ## (A)
  match([0, [1, 2, 3, 4]]) {
    with(_[a, _[b, *c, d]]) { # Same as `Array.(a, Array.(b, *c, d))'
      p [a, b, c, d] #=> [0, 1, [2, 3], 4]
    }
  }
 
- # (B)
+ ## (B)
+ # From util.match in Gauche: http://practical-scheme.net/gauche/man/?l=en&p=util.match
  match([[0, 1], [2, 3]]) {
    with(_[_[a, b], ___]) {
      p [a, b] #=> [[0, 2], [1, 3]]
    }
  }
 
- # (C)
+ ## (C)
+ # balance in a red-black tree
  Node = Struct.new(:left, :key, :right)
  class R < Node; end
  class B < Node; end
@@ -59,7 +61,7 @@ or
    }
  end
 
- # (D)
+ ## (D)
  class EMail
    def self.extract(value)
      value.to_s.split(/@/).tap {|parts| raise PatternNotMatch unless parts.length == 2 }
@@ -79,7 +81,7 @@ or
    }
  }
 
- # (E)
+ ## (E)
  match(10) {
    with(Object.(:to_i => a, :foobar => b)) { :not_match }
    with(Object.(:to_i => a, :to_s.(16) => b)) {
