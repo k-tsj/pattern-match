@@ -15,7 +15,87 @@ or
  $ bundle install --path vendor/bundle
 
 == Example
-See test/test_pattern-match.rb.
+ require 'pattern-match'
+
+ # (A)
+ match([0, [1, 2, 3, 4]]) {
+   with(_[a, _[b, *c, d]]) { # Same as `Array.(a, Array.(b, *c, d))'
+     p [a, b, c, d] #=> [0, 1, [2, 3], 4]
+   }
+ }
+
+ # (B)
+ match([[0, 1], [2, 3]]) {
+   with(_[_[a, b], ___]) {
+     p [a, b] #=> [[0, 2], [1, 3]]
+   }
+ }
+
+ # (C)
+ Node = Struct.new(:left, :key, :right)
+ class R < Node; end
+ class B < Node; end
+
+ def balance(left, key, right)
+   match([left, key, right]) {
+     with(_[R.(a, x, b), y, R.(c, z, d)]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[R.(R.(a, x, b), y, c), z, d]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[R.(a, x, R.(b, y, c)), z, d]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[a, x, R.(b, y, R.(c, z, d))]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[a, x, R.(R.(b, y, c), z, d)]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_) { B[left, key, right] }
+   }
+ end
+
+ # With Refinements
+ def balance(left, key, right)
+   match([left, key, right]) {
+     with(_[R[a, x, b], y, R[c, z, d]]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[R[R[a, x, b], y, c], z, d]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[R[a, x, R[b, y, c]], z, d]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[a, x, R[b, y, R[c, z, d]]]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_[a, x, R[R[b, y, c], z, d]]) { R[B[a, x, b], y, B[c, z, d]] }
+     with(_) { B[left, key, right] }
+   }
+ end
+
+ # (D)
+ class EMail
+   def self.extract(value)
+     value.to_s.split(/@/).tap {|parts| raise PatternNotMatch unless parts.length == 2 }
+   end
+ end
+
+ match(['foo-bar@example.com', 'baz-bar@example.com']) {
+   with(_[mail & EMail.(name & /(\w+)-(\w+)/.(firstname, 'bar'), domain), ___]) {
+     p [firstname, name, domain, mail] # => [["foo", "baz"], ["foo-bar", "baz-bar"], ["example.com", "example.com"], ["foo-bar@example.com", "baz-bar@example.com"]]
+   }
+ }
+
+ # With Refinements
+ match(['foo-bar@example.com', 'baz-bar@example.com']) {
+   with(_[mail & EMail[name & /(\w+)-(\w+)/[firstname, 'bar'], domain], ___]) {
+     p [firstname, name, domain, mail] # => [["foo", "baz"], ["foo-bar", "baz-bar"], ["example.com", "example.com"], ["foo-bar@example.com", "baz-bar@example.com"]]
+   }
+ }
+
+ # (E)
+ match(10) {
+   with(Object.(:to_i => a, :foobar => b)) { :not_match }
+   with(Object.(:to_i => a, :to_s.(16) => b)) {
+     p [a, b] #=> [10, "a"]
+   }
+ }
+
+ # With Refinements
+ match(10) {
+   with(:to_i[a] & :foobar[b]) { :not_match }
+   with(:to_i[a] & :to_s.(16)[b])) {
+     p [a, b] #=> [10, "a"]
+   }
+ }
+
+You can see another example in test/test_pattern-match.rb.
 
 == Development
  $ git clone git://github.com/k-tsj/pattern-match.git
