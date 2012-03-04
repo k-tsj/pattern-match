@@ -289,6 +289,26 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
+  def test_extractor_class_matchdata
+    m = /.../.match('abc')
+    match(m) {
+      with(MatchData.(a)) {
+        assert_equal('abc', a)
+      }
+      with(_) { flunk }
+    }
+
+    m = /(.)(.)(.)/.match('abc')
+    match(m) {
+      with(MatchData.(a, b, c)) {
+        assert_equal('a', a)
+        assert_equal('b', b)
+        assert_equal('c', c)
+      }
+      with(_) { flunk }
+    }
+  end
+
   def test_extractor_obj_regexp
     match('abc') {
       with(/./.(a)) { flunk }

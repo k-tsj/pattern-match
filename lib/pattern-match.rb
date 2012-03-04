@@ -68,6 +68,13 @@ module PatternMatch
       end
     end
 
+    refine MatchData.singleton_class do
+      def extract(val)
+        accept_self_instance_only(val)
+        val.captures.empty? ? [val[0]] : val.captures
+      end
+    end
+
     if SUPPORT_REFINEMENTS
       def Struct.method_added(name)
         if name == members[0]
