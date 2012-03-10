@@ -113,7 +113,7 @@ module PatternMatch
 
     refine Symbol do
       def call(*args)
-        Proc.new {|obj| obj.send(self, *args) }
+        Proc.new {|obj| obj.__send__(self, *args) }
       end
     end
 
@@ -329,7 +329,7 @@ module PatternMatch
     end
 
     def match(val)
-      @val.send(@compare_by, val)
+      @val.__send__(@compare_by, val)
     end
   end
 
@@ -496,7 +496,7 @@ module Kernel
         using ::PatternMatch::NameSpace
 
         def call_refined_method(obj, name, *args)
-          obj.send(name, *args)
+          obj.__send__(name, *args)
         end
       end
       env.instance_eval(&block)
