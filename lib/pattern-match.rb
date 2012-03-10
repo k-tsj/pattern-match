@@ -361,10 +361,6 @@ module PatternMatch
   end
 
   class PatternNot < Pattern
-    def initialize(subpattern)
-      super
-    end
-
     def match(val)
       ! @subpatterns[0].match(val)
     rescue PatternNotMatch
