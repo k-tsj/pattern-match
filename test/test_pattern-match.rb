@@ -38,7 +38,6 @@ class TestPatternMatch < Test::Unit::TestCase
   end
 
   def test_variable_shadowing
-    skip 'not implemented yet'
     match(0) {
       with(a) {
         match(1) {

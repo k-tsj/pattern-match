@@ -446,13 +446,20 @@ module PatternMatch
       tmpbinding_module(obj).instance_eval do
         begin
           binding.each do |name, val|
-            define_method(name) { val }
-            private name
+            stack = @stacks[name]
+            if stack.empty?
+              define_method(name) { stack[-1] }
+              private name
+            end
+            stack.push(val)
+            @stacks[name] = stack
           end
           obj.instance_eval(&block)
         ensure
           binding.each do |name, _|
-            remove_method(name) if private_method_defined? name
+            if @stacks[name].tap(&:pop).empty?
+              remove_method(name)
+            end
           end
         end
       end
@@ -465,6 +472,9 @@ module PatternMatch
       m = obj.singleton_class.ancestors.find {|i| i.is_a? TmpBindingModule }
       unless m
         m = TmpBindingModule.new
+        m.instance_eval do
+          @stacks = ::Hash.new { [] }
+        end
         obj.extend(m)
       end
       m
