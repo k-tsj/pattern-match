@@ -253,6 +253,16 @@ class TestPatternMatch < Test::Unit::TestCase
     assert_equal(1, 2.times.find(&match { with(1) { true } }))
   end
 
+  def test_extractor_class
+    assert_raise(NotImplementedError) {
+      c = Class.new
+      match(0) {
+        with(c.(a)) {
+        }
+      }
+    }
+  end
+
   def test_extractor_class_struct
     s = Struct.new(:a, :b, :c)
     match(s[0, 1, 2]) {

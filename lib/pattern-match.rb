@@ -40,6 +40,10 @@ module PatternMatch
     refine Class do
       include Extractable
 
+      def extract(val)
+        raise NotImplementedError, "need to define `#{__method__}'"
+      end
+
       private
 
       def accept_self_instance_only(val)
