@@ -142,7 +142,7 @@ module PatternMatch
     end
 
     def vars
-      @subpatterns.map(&:vars).inject([], :concat)
+      @subpatterns.map(&:vars).flatten
     end
 
     def binding
