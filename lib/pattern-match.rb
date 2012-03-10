@@ -9,7 +9,7 @@ module PatternMatch
     SUPPORT_REFINEMENTS = true
   else
     SUPPORT_REFINEMENTS = false
-    Module.module_eval {
+    Module.module_eval do
       private
 
       def refine(klass, &block)
@@ -18,7 +18,7 @@ module PatternMatch
 
       def using(klass)
       end
-    }
+    end
   end
 
   module Extractable
@@ -86,11 +86,11 @@ module PatternMatch
       def Struct.method_added(name)
         if name == members[0]
           this = self
-          PatternMatch::NameSpace.module_eval {
+          PatternMatch::NameSpace.module_eval do
             refine this.singleton_class do
               include Extractable
             end
-          }
+          end
         end
       end
 
