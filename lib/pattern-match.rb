@@ -452,7 +452,6 @@ module PatternMatch
               private name
             end
             stack.push(val)
-            @stacks[name] = stack
           end
           obj.instance_eval(&block)
         ensure
@@ -473,7 +472,7 @@ module PatternMatch
       unless m
         m = TmpBindingModule.new
         m.instance_eval do
-          @stacks = ::Hash.new { [] }
+          @stacks = ::Hash.new {|h, k| h[k] = [] }
         end
         obj.extend(m)
       end
