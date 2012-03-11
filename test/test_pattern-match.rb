@@ -40,14 +40,31 @@ class TestPatternMatch < Test::Unit::TestCase
   def test_variable_shadowing
     match(0) {
       with(a) {
-        match(1) {
-          with(a) {
+        assert_equal(0, a)
+        match([1, 2]) {
+          with(_[a, b]) {
             assert_equal(1, a)
+            assert_equal(2, b)
+            match([3, 4, 5]) {
+              with(_[a, b, c]) {
+                assert_equal(3, a)
+                assert_equal(4, b)
+                assert_equal(5, c)
+              }
+            }
+            assert_equal(1, a)
+            assert_equal(2, b)
+            assert_raise(NameError) { c }
           }
         }
         assert_equal(0, a)
+        assert_raise(NameError) { b }
+        assert_raise(NameError) { c }
       }
     }
+    assert_raise(NameError) { a }
+    assert_raise(NameError) { b }
+    assert_raise(NameError) { c }
   end
 
   def test_uscore
