@@ -67,6 +67,34 @@ class TestPatternMatch < Test::Unit::TestCase
     assert_raise(NameError) { c }
   end
 
+  def test_lexical_scoping(rec_call = false, f = nil)
+    skip 'not supported'
+    unless rec_call
+      match(0) {
+        with(a) {
+          assert_equal(0, a)
+          test_lexical_scoping(true, ->{ a }) {|g|
+            assert_equal(0, a)
+            assert_equal(1, g.())
+          }
+          assert_equal(0, a)
+        }
+      }
+    else
+      assert_raise(NameError) { a }
+      assert_equal(0, f.())
+      match(1) {
+        with(a) {
+          assert_equal(1, a)
+          assert_equal(0, f.())
+          yield ->{ a }
+          assert_equal(1, a)
+          assert_equal(0, f.())
+        }
+      }
+    end
+  end
+
   def test_uscore
     match([0, 1, Fixnum]) {
       with(_[_, ! _(Float), _(Fixnum, :==)]) {
