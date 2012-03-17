@@ -63,7 +63,7 @@ or
 
  ## (D)
  class EMail
-   def self.extract(value)
+   def self.deconstruct(value)
      value.to_s.split(/@/).tap {|parts| raise PatternNotMatch unless parts.length == 2 }
    end
  end

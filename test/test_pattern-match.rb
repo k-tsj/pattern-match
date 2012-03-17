@@ -457,7 +457,7 @@ class TestPatternMatch < Test::Unit::TestCase
     c = Class.new
     ::PatternMatch::NameSpace.module_eval {
       refine c.singleton_class do
-        def extract(*)
+        def deconstruct(*)
           [:c]
         end
       end

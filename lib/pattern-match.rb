@@ -21,7 +21,7 @@ module PatternMatch
     end
   end
 
-  module Extractable
+  module Deconstructable
     def call(*subpatterns)
       if Object == self
         raise MalformedPatternError unless subpatterns.length == 1
@@ -38,9 +38,9 @@ module PatternMatch
 
   module NameSpace
     refine Class do
-      include Extractable
+      include Deconstructable
 
-      def extract(val)
+      def deconstruct(val)
         raise NotImplementedError, "need to define `#{__method__}'"
       end
 
@@ -52,35 +52,35 @@ module PatternMatch
     end
 
     refine Array.singleton_class do
-      def extract(val)
+      def deconstruct(val)
         accept_self_instance_only(val)
         val
       end
     end
 
     refine Struct.singleton_class do
-      def extract(val)
+      def deconstruct(val)
         accept_self_instance_only(val)
         val.values
       end
     end
 
     refine Complex.singleton_class do
-      def extract(val)
+      def deconstruct(val)
         accept_self_instance_only(val)
         val.rect
       end
     end
 
     refine Rational.singleton_class do
-      def extract(val)
+      def deconstruct(val)
         accept_self_instance_only(val)
         [val.numerator, val.denominator]
       end
     end
 
     refine MatchData.singleton_class do
-      def extract(val)
+      def deconstruct(val)
         accept_self_instance_only(val)
         val.captures.empty? ? [val[0]] : val.captures
       end
@@ -92,24 +92,24 @@ module PatternMatch
           this = self
           PatternMatch::NameSpace.module_eval do
             refine this.singleton_class do
-              include Extractable
+              include Deconstructable
             end
           end
         end
       end
 
       refine Proc do
-        include Extractable
+        include Deconstructable
 
-        def extract(val)
+        def deconstruct(val)
           [self === val]
         end
       end
 
       refine Symbol do
-        include Extractable
+        include Deconstructable
 
-        def extract(val)
+        def deconstruct(val)
           [self.to_proc === val]
         end
       end
@@ -122,9 +122,9 @@ module PatternMatch
     end
 
     refine Regexp do
-      include Extractable
+      include Deconstructable
 
-      def extract(val)
+      def deconstruct(val)
         m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)
         raise PatternNotMatch unless m
         m.captures.empty? ? [m[0]] : m.captures
@@ -234,7 +234,7 @@ module PatternMatch
     end
 
     def match(val)
-      extracted_vals = pattern_match_env.call_refined_method(@extractor, :extract, val)
+      extracted_vals = pattern_match_env.call_refined_method(@extractor, :deconstruct, val)
       k = extracted_vals.length - (@subpatterns.length - 2)
       quantifier = @subpatterns.find {|i| i.is_a?(PatternQuantifier) }
       if quantifier
