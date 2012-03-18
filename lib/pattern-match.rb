@@ -180,10 +180,10 @@ module PatternMatch
     def validate
       if root?
         dup_vars = vars - vars.uniq {|i| i.name }
-        raise MalformedPatternError, "duplicate variables: #{dup_vars.map(&:name).join(', ')}" unless dup_vars.empty?
+        raise MalformedPatternError, "duplicate variables: #{dup_vars.map {|i| i.name }.join(', ')}" unless dup_vars.empty?
       end
       raise MalformedPatternError if @subpatterns.count {|i| i.is_a?(PatternQuantifier) } > 1
-      @subpatterns.each(&:validate)
+      @subpatterns.each {|i| i.validate }
     end
 
     def pattern_match_env
