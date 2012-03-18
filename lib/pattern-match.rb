@@ -374,13 +374,9 @@ module PatternMatch
   end
 
   class Env < BasicObject
-    attr_reader :ret
-
     def initialize(ctx, val)
       @ctx = ctx
       @val = val
-      @matched = false
-      @ret = nil
     end
 
     private
@@ -389,9 +385,11 @@ module PatternMatch
       pat = pat_or_val.is_a?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
       pat.validate
       pat.pattern_match_env = self
-      if (! @matched) and pat.match(@val) and (guard_proc ? with_tmpbinding(@ctx, pat.binding, &guard_proc) : true)
-        @matched = true
-        @ret = with_tmpbinding(@ctx, pat.binding, &block)
+      if pat.match(@val) and (guard_proc ? with_tmpbinding(@ctx, pat.binding, &guard_proc) : true)
+        ret = with_tmpbinding(@ctx, pat.binding, &block)
+        ::Kernel.throw(:exit_match, ret)
+      else
+        nil
       end
     rescue PatternNotMatch
     end
@@ -498,8 +496,9 @@ module Kernel
           obj.__send__(name, *args)
         end
       end
-      env.instance_eval(&block)
-      env.ret
+      catch(:exit_match) do
+        env.instance_eval(&block)
+      end
     end
     case vals.length
     when 0
