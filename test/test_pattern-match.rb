@@ -6,6 +6,7 @@ class TestPatternMatch < Test::Unit::TestCase
     this = self
     ret = match([0, 1, 2, 3]) {
       with(nil) { flunk }
+      with(_[a, 0, 0, b]) { flunk }
       with(_[a, Fixnum , 2, b]) {
         assert_equal(this, self)
         assert_equal(0, a)
