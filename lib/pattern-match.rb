@@ -373,7 +373,7 @@ module PatternMatch
     end
   end
 
-  class Env < BasicObject
+  class Env < (defined?(::Profiler__) ? Object : BasicObject)
     def initialize(ctx, val)
       @ctx = ctx
       @val = val
