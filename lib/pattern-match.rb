@@ -320,8 +320,8 @@ module PatternMatch
     end
 
     def nest_level(quantifier)
-      qs = ancestors.map {|i| i.next.is_a?(PatternQuantifier) ? i.next : nil }.find_all {|i| i }.reverse
-      qs.index(quantifier) || (raise PatternMatchError)
+      @qs ||= ancestors.map {|i| i.next.is_a?(PatternQuantifier) ? i.next : nil }.find_all {|i| i }.reverse
+      @qs.index(quantifier) || (raise PatternMatchError)
     end
   end
 
