@@ -239,20 +239,28 @@ module PatternMatch
       quantifier = @subpatterns.find {|i| i.is_a?(PatternQuantifier) }
       if quantifier
         return false unless quantifier.min_k <= k
+        quantifier.prev.vars.each {|v| v.set_bind_to(quantifier) }
       else
         return false unless @subpatterns.length == extracted_vals.length
       end
-      @subpatterns.flat_map do |pat|
+      i = 0
+      extracted_vals.all? do |v|
+        pat = @subpatterns[i]
         case
         when pat.next.is_a?(PatternQuantifier)
-          []
+          if k > 0
+            k -= 1
+            i += 2 if k == 0
+          else
+            pat = pat.next.next
+            i += 3
+          end
         when pat.is_a?(PatternQuantifier)
-          pat.prev.vars.each {|v| v.set_bind_to(pat) }
-          Array.new(k, pat.prev)
+          pat = pat.next
+          i += 2
         else
-          [pat]
+          i += 1
         end
-      end.zip(extracted_vals).all? do |pat, v|
         pat.match(v)
       end
     end
