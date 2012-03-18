@@ -146,7 +146,7 @@ module PatternMatch
     end
 
     def vars
-      @subpatterns.map(&:vars).flatten
+      @vars ||= @subpatterns.map(&:vars).flatten
     end
 
     def binding
