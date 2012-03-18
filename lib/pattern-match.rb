@@ -150,7 +150,7 @@ module PatternMatch
     end
 
     def binding
-      vars.each_with_object({}) {|v, h| h[v.name] = v.val }
+      @binding ||= vars.each_with_object({}) {|v, h| h[v.name] = v.val }
     end
 
     def &(pattern)
