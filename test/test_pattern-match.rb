@@ -19,11 +19,12 @@ class TestPatternMatch < Test::Unit::TestCase
     assert_raise(NameError) { a }
     assert_raise(NameError) { b }
 
-    ret = match(0) {
-      with(1) { flunk }
-      with(2) { flunk }
+    assert_raise(PatternMatch::NoMatchingPatternError) {
+      match(0) {
+        with(1) { flunk }
+        with(2) { flunk }
+      }
     }
-    assert_nil(ret)
 
     match(0) {
       with(i, guard { i.odd? }) { flunk }
@@ -296,7 +297,7 @@ class TestPatternMatch < Test::Unit::TestCase
   end
 
   def test_match_without_argument
-    assert_equal(1, 2.times.find(&match { with(1) { true } }))
+    assert_equal(1, 2.times.find(&match { with(1) { true }; with(_) { false } }))
   end
 
   def test_extractor_class

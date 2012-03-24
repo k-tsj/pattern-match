@@ -480,6 +480,7 @@ module PatternMatch
 
   class PatternNotMatch < Exception; end
   class PatternMatchError < StandardError; end
+  class NoMatchingPatternError < PatternMatchError; end
   class MalformedPatternError < PatternMatchError; end
 end
 
@@ -498,6 +499,7 @@ module Kernel
       end
       catch(:exit_match) do
         env.instance_eval(&block)
+        raise ::PatternMatch::NoMatchingPatternError
       end
     end
     case vals.length
