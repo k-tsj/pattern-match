@@ -47,7 +47,7 @@ module PatternMatch
       private
 
       def accept_self_instance_only(val)
-        raise PatternNotMatch unless val.is_a?(self)
+        raise PatternNotMatch unless val.kind_of?(self)
       end
     end
 
@@ -141,7 +141,7 @@ module PatternMatch
       @next = nil
       @prev = nil
       @pattern_match_env = nil
-      @subpatterns = subpatterns.map {|i| i.is_a?(Pattern) ? i : PatternValue.new(i) }
+      @subpatterns = subpatterns.map {|i| i.kind_of?(Pattern) ? i : PatternValue.new(i) }
       set_subpatterns_relation
     end
 
@@ -170,7 +170,7 @@ module PatternMatch
     end
 
     def quantified?
-      @next.is_a?(PatternQuantifier) || (root? ? false : @parent.quantified?)
+      @next.kind_of?(PatternQuantifier) || (root? ? false : @parent.quantified?)
     end
 
     def root?
@@ -182,7 +182,7 @@ module PatternMatch
         dup_vars = vars - vars.uniq {|i| i.name }
         raise MalformedPatternError, "duplicate variables: #{dup_vars.map(&:name).join(', ')}" unless dup_vars.empty?
       end
-      raise MalformedPatternError if @subpatterns.count {|i| i.is_a?(PatternQuantifier) } > 1
+      raise MalformedPatternError if @subpatterns.count {|i| i.kind_of?(PatternQuantifier) } > 1
       @subpatterns.each(&:validate)
     end
 
@@ -215,7 +215,7 @@ module PatternMatch
 
   class PatternObject < Pattern
     def initialize(spec)
-      raise MalformedPatternError unless spec.is_a?(Hash)
+      raise MalformedPatternError unless spec.kind_of?(Hash)
       super(*spec.values)
       @spec = spec.map {|k, pat| [k.to_proc, pat] }
     rescue
@@ -236,7 +236,7 @@ module PatternMatch
     def match(val)
       extracted_vals = pattern_match_env.call_refined_method(@extractor, :deconstruct, val)
       k = extracted_vals.length - (@subpatterns.length - 2)
-      quantifier = @subpatterns.find {|i| i.is_a?(PatternQuantifier) }
+      quantifier = @subpatterns.find {|i| i.kind_of?(PatternQuantifier) }
       if quantifier
         return false unless quantifier.min_k <= k
       else
@@ -244,9 +244,9 @@ module PatternMatch
       end
       @subpatterns.flat_map do |pat|
         case
-        when pat.next.is_a?(PatternQuantifier)
+        when pat.next.kind_of?(PatternQuantifier)
           []
-        when pat.is_a?(PatternQuantifier)
+        when pat.kind_of?(PatternQuantifier)
           pat.prev.vars.each {|v| v.set_bind_to(pat) }
           Array.new(k, pat.prev)
         else
@@ -273,7 +273,7 @@ module PatternMatch
     def validate
       super
       raise MalformedPatternError unless @prev
-      raise MalformedPatternError unless @parent.is_a?(PatternExtractor)
+      raise MalformedPatternError unless @parent.kind_of?(PatternExtractor)
     end
   end
 
@@ -320,7 +320,7 @@ module PatternMatch
     end
 
     def nest_level(quantifier)
-      qs = ancestors.map {|i| i.next.is_a?(PatternQuantifier) ? i.next : nil }.find_all {|i| i }.reverse
+      qs = ancestors.map {|i| i.next.kind_of?(PatternQuantifier) ? i.next : nil }.find_all {|i| i }.reverse
       qs.index(quantifier) || (raise PatternMatchError)
     end
   end
@@ -382,7 +382,7 @@ module PatternMatch
     private
 
     def with(pat_or_val, guard_proc = nil, &block)
-      pat = pat_or_val.is_a?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
+      pat = pat_or_val.kind_of?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
       pat.validate
       pat.pattern_match_env = self
       if pat.match(@val) and (guard_proc ? with_tmpbinding(@ctx, pat.binding, &guard_proc) : true)
@@ -466,7 +466,7 @@ module PatternMatch
     end
 
     def tmpbinding_module(obj)
-      m = obj.singleton_class.ancestors.find {|i| i.is_a? TmpBindingModule }
+      m = obj.singleton_class.ancestors.find {|i| i.kind_of?(TmpBindingModule) }
       unless m
         m = TmpBindingModule.new
         m.instance_eval do
