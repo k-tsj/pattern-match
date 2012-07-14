@@ -472,7 +472,13 @@ module PatternMatch
         m.instance_eval do
           @stacks = ::Hash.new {|h, k| h[k] = [] }
         end
-        obj.extend(m)
+        obj.singleton_class.module_eval do
+          if respond_to?(:prepend, true)
+            prepend m
+          else
+            include m
+          end
+        end
       end
       m
     end

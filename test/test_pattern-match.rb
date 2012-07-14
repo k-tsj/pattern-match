@@ -97,6 +97,20 @@ class TestPatternMatch < Test::Unit::TestCase
     end
   end
 
+  def test_override_singleton_method
+    skip 'Module#prepend not supported' unless Module.private_method_defined?(:prepend)
+    match(0) {
+      with(_test_override_singleton_method) {
+        class << self
+          def _test_override_singleton_method
+            1
+          end
+        end
+        assert_equal(0, _test_override_singleton_method)
+      }
+    }
+  end
+
   def test_uscore
     match([0, 1, Fixnum]) {
       with(_[_, ! _(Float), _(Fixnum, :==)]) {
