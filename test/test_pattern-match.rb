@@ -101,10 +101,8 @@ class TestPatternMatch < Test::Unit::TestCase
     skip 'Module#prepend not supported' unless Module.private_method_defined?(:prepend)
     match(0) {
       with(_test_override_singleton_method) {
-        class << self
-          def _test_override_singleton_method
-            1
-          end
+        def self._test_override_singleton_method
+          1
         end
         assert_equal(0, _test_override_singleton_method)
       }

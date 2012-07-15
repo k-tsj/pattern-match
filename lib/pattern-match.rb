@@ -215,7 +215,6 @@ module PatternMatch
 
   class PatternObject < Pattern
     def initialize(spec)
-      raise MalformedPatternError unless spec.kind_of?(Hash)
       super(*spec.values)
       @spec = spec.map {|k, pat| [k.to_proc, pat] }
     rescue
@@ -472,7 +471,7 @@ module PatternMatch
         m.instance_eval do
           @stacks = ::Hash.new {|h, k| h[k] = [] }
         end
-        obj.singleton_class.module_eval do
+        obj.singleton_class.class_eval do
           if respond_to?(:prepend, true)
             prepend m
           else
