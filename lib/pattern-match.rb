@@ -26,6 +26,9 @@ module PatternMatch
       if Object == self
         raise MalformedPatternError unless subpatterns.length == 1
         PatternObject.new(subpatterns[0])
+      elsif Hash == self
+        raise MalformedPatternError unless subpatterns.length == 1
+        PatternHash.new(subpatterns[0])
       else
         PatternExtractor.new(self, *subpatterns)
       end
@@ -223,6 +226,19 @@ module PatternMatch
 
     def match(val)
       @spec.all? {|k, pat| pat.match(k.(val)) rescue raise PatternNotMatch }
+    end
+  end
+
+  class PatternHash < Pattern
+    def initialize(spec)
+      super(*spec.values)
+      @spec = spec
+    end
+
+    def match(val)
+      raise PatternNotMatch unless val.kind_of?(Hash)
+      raise PatternNotMatch unless @spec.keys.all? {|k| val.has_key?(k) }
+      @spec.all? {|k, pat| pat.match(val[k]) rescue raise PatternNotMatch }
     end
   end
 

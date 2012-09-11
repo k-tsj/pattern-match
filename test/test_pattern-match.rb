@@ -467,6 +467,24 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
+  def test_hash
+    match({a: 0, b: 1}) {
+      with(Hash.(a: a, b: b, c: c)) { flunk }
+      with(Hash.(a: a, b: b)) {
+        assert_equal(0, a)
+        assert_equal(1, b)
+      }
+      with(_) { flunk }
+    }
+
+    match({a: 0, b: 1}) {
+      with(Hash.(a: a)) {
+        assert_equal(0, a)
+      }
+      with(_) { flunk }
+    }
+  end
+
   def test_refine_after_requiring_library
     c = Class.new
     ::PatternMatch::NameSpace.module_eval {
