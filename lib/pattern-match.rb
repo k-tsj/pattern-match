@@ -30,7 +30,7 @@ module PatternMatch
         raise MalformedPatternError unless subpatterns.length == 1
         PatternHash.new(subpatterns[0])
       else
-        PatternExtractor.new(self, *subpatterns)
+        PatternDeconstructor.new(self, *subpatterns)
       end
     end
 
@@ -242,7 +242,7 @@ module PatternMatch
     end
   end
 
-  class PatternExtractor < Pattern
+  class PatternDeconstructor < Pattern
     def initialize(extractor, *subpatterns)
       super(*subpatterns)
       @extractor = extractor
@@ -288,7 +288,7 @@ module PatternMatch
     def validate
       super
       raise MalformedPatternError unless @prev
-      raise MalformedPatternError unless @parent.kind_of?(PatternExtractor)
+      raise MalformedPatternError unless @parent.kind_of?(PatternDeconstructor)
     end
   end
 
