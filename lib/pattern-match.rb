@@ -503,6 +503,18 @@ module PatternMatch
   class PatternMatchError < StandardError; end
   class NoMatchingPatternError < PatternMatchError; end
   class MalformedPatternError < PatternMatchError; end
+
+  # Make Pattern and its subclasses/Env private.
+  if respond_to?(:private_constant)
+    constants.each do |c|
+      klass = const_get(c)
+      next unless klass.kind_of?(Class)
+      if klass.ancestors.find {|i| i == Pattern }
+        private_constant c
+      end
+    end
+    private_constant :Env
+  end
 end
 
 module Kernel
@@ -510,7 +522,7 @@ module Kernel
 
   def match(*vals, &block)
     do_match = Proc.new do |val|
-      env = PatternMatch::Env.new(self, val)
+      env = PatternMatch.const_get(:Env).new(self, val)
       class << env
         using ::PatternMatch::NameSpace
 
