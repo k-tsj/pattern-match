@@ -312,7 +312,7 @@ class TestPatternMatch < Test::Unit::TestCase
     assert_equal(1, 2.times.find(&match { with(1) { true }; with(_) { false } }))
   end
 
-  def test_extractor_class
+  def test_deconstructor_class
     assert_raise(NotImplementedError) {
       c = Class.new
       match(0) {
@@ -322,7 +322,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_class_struct
+  def test_deconstructor_class_struct
     s = Struct.new(:a, :b, :c)
     match(s[0, 1, 2]) {
       with(s.(a, b, c)) {
@@ -334,7 +334,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_struct_with_refinements
+  def test_deconstructor_struct_with_refinements
     skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
     s = Struct.new(:a, :b, :c)
     match(s[0, 1, 2]) {
@@ -347,7 +347,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_class_complex
+  def test_deconstructor_class_complex
     match(Complex(0, 1)) {
       with(Complex.(a, b)) {
         assert_equal(0, a)
@@ -357,7 +357,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_class_rational
+  def test_deconstructor_class_rational
     match(Rational(0, 1)) {
       with(Rational.(a, b)) {
         assert_equal(0, a)
@@ -367,7 +367,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_class_matchdata
+  def test_deconstructor_class_matchdata
     m = /.../.match('abc')
     match(m) {
       with(MatchData.(a)) {
@@ -387,7 +387,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_obj_regexp
+  def test_deconstructor_obj_regexp
     match('abc') {
       with(/./.(a)) { flunk }
       with(a & /.../.(b)) {
@@ -408,7 +408,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_obj_regexp_with_refinements
+  def test_deconstructor_obj_regexp_with_refinements
     skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
     match('abc') {
       with(/./[a]) { flunk }
@@ -430,7 +430,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_obj_proc_with_refinements
+  def test_deconstructor_obj_proc_with_refinements
     skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
     match(0) {
       with((Proc.new {|i| i + 1 })[a]) {
@@ -440,7 +440,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_extractor_obj_symbol_with_refinements
+  def test_deconstructor_obj_symbol_with_refinements
     skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
     match(0) {
       with(:to_s[a]) {

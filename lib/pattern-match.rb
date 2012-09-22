@@ -243,19 +243,19 @@ module PatternMatch
   end
 
   class PatternDeconstructor < Pattern
-    def initialize(extractor, *subpatterns)
+    def initialize(deconstructor, *subpatterns)
       super(*subpatterns)
-      @extractor = extractor
+      @deconstructor = deconstructor
     end
 
     def match(val)
-      extracted_vals = pattern_match_env.call_refined_method(@extractor, :deconstruct, val)
-      k = extracted_vals.length - (@subpatterns.length - 2)
+      deconstructed_vals = pattern_match_env.call_refined_method(@deconstructor, :deconstruct, val)
+      k = deconstructed_vals.length - (@subpatterns.length - 2)
       quantifier = @subpatterns.find {|i| i.kind_of?(PatternQuantifier) }
       if quantifier
         return false unless quantifier.min_k <= k
       else
-        return false unless @subpatterns.length == extracted_vals.length
+        return false unless @subpatterns.length == deconstructed_vals.length
       end
       @subpatterns.flat_map do |pat|
         case
@@ -267,7 +267,7 @@ module PatternMatch
         else
           [pat]
         end
-      end.zip(extracted_vals).all? do |pat, v|
+      end.zip(deconstructed_vals).all? do |pat, v|
         pat.match(v)
       end
     end
