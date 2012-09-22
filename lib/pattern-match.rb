@@ -509,7 +509,7 @@ module PatternMatch
     constants.each do |c|
       klass = const_get(c)
       next unless klass.kind_of?(Class)
-      if klass.ancestors.find {|i| i == Pattern }
+      if klass <= Pattern
         private_constant c
       end
     end
