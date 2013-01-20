@@ -334,19 +334,6 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_deconstructor_struct_with_refinements
-    skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
-    s = Struct.new(:a, :b, :c)
-    match(s[0, 1, 2]) {
-      with(s[a, b, c]) {
-        assert_equal(0, a)
-        assert_equal(1, b)
-        assert_equal(2, c)
-      }
-      with(_) { flunk }
-    }
-  end
-
   def test_deconstructor_class_complex
     match(Complex(0, 1)) {
       with(Complex.(a, b)) {
@@ -408,48 +395,6 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_deconstructor_obj_regexp_with_refinements
-    skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
-    match('abc') {
-      with(/./[a]) { flunk }
-      with(a & /.../[b]) {
-        assert_equal('abc', a)
-        assert_equal('abc', b)
-      }
-      with(_) { flunk }
-    }
-
-    match('abc') {
-      with(a & /(.)(.)(.)/[b, c ,d]) {
-        assert_equal('abc', a)
-        assert_equal('a', b)
-        assert_equal('b', c)
-        assert_equal('c', d)
-      }
-      with(_) { flunk }
-    }
-  end
-
-  def test_deconstructor_obj_proc_with_refinements
-    skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
-    match(0) {
-      with((Proc.new {|i| i + 1 })[a]) {
-        assert_equal(1, a)
-      }
-      with(_) { flunk }
-    }
-  end
-
-  def test_deconstructor_obj_symbol_with_refinements
-    skip 'refinements not supported' unless PatternMatch::SUPPORT_REFINEMENTS
-    match(0) {
-      with(:to_s[a]) {
-        assert_equal('0', a)
-      }
-      with(_) { flunk }
-    }
-  end
-
   def test_object
     match(10) {
       with(Object.(:to_i => a, :to_s.(16) => b, :no_method => c)) { flunk }
@@ -481,21 +426,6 @@ class TestPatternMatch < Test::Unit::TestCase
       with(Hash.(a: a)) {
         assert_equal(0, a)
       }
-      with(_) { flunk }
-    }
-  end
-
-  def test_refine_after_requiring_library
-    c = Class.new
-    ::PatternMatch::NameSpace.module_eval {
-      refine c.singleton_class do
-        def deconstruct(*)
-          [:c]
-        end
-      end
-    }
-    match(:c) {
-      with(c.(a)) { assert_equal(:c, a) }
       with(_) { flunk }
     }
   end

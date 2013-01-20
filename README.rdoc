@@ -49,18 +49,6 @@ or
    }
  end
 
- # With Refinements
- def balance(left, key, right)
-   match([left, key, right]) {
-     with(_[R[a, x, b], y, R[c, z, d]]) { R[B[a, x, b], y, B[c, z, d]] }
-     with(_[R[R[a, x, b], y, c], z, d]) { R[B[a, x, b], y, B[c, z, d]] }
-     with(_[R[a, x, R[b, y, c]], z, d]) { R[B[a, x, b], y, B[c, z, d]] }
-     with(_[a, x, R[b, y, R[c, z, d]]]) { R[B[a, x, b], y, B[c, z, d]] }
-     with(_[a, x, R[R[b, y, c], z, d]]) { R[B[a, x, b], y, B[c, z, d]] }
-     with(_) { B[left, key, right] }
-   }
- end
-
  ## (D)
  class EMail
    def self.deconstruct(value)
@@ -74,25 +62,10 @@ or
    }
  }
 
- # With Refinements
- match(['foo-bar@example.com', 'baz-bar@example.com']) {
-   with(_[mail & EMail[name & /(\w+)-(\w+)/[firstname, 'bar'], domain], ___]) {
-     p [firstname, name, domain, mail] # => [["foo", "baz"], ["foo-bar", "baz-bar"], ["example.com", "example.com"], ["foo-bar@example.com", "baz-bar@example.com"]]
-   }
- }
-
  ## (E)
  match(10) {
    with(Object.(:to_i => a, :foobar => b)) { :not_match }
    with(Object.(:to_i => a, :to_s.(16) => b)) {
-     p [a, b] #=> [10, "a"]
-   }
- }
-
- # With Refinements
- match(10) {
-   with(:to_i[a] & :foobar[b]) { :not_match }
-   with(:to_i[a] & :to_s.(16)[b])) {
      p [a, b] #=> [10, "a"]
    }
  }

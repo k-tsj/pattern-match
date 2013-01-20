@@ -5,22 +5,6 @@
 require 'pattern-match/version'
 
 module PatternMatch
-  if Module.private_method_defined? :refine
-    SUPPORT_REFINEMENTS = true
-  else
-    SUPPORT_REFINEMENTS = false
-    Module.module_eval do
-      private
-
-      def refine(klass, &block)
-        klass.class_eval(&block)
-      end
-
-      def using(klass)
-      end
-    end
-  end
-
   module Deconstructable
     def call(*subpatterns)
       if Object == self
@@ -33,117 +17,15 @@ module PatternMatch
         PatternDeconstructor.new(self, *subpatterns)
       end
     end
-
-    if SUPPORT_REFINEMENTS
-      alias [] call
-    end
-  end
-
-  module NameSpace
-    refine Class do
-      include Deconstructable
-
-      def deconstruct(val)
-        raise NotImplementedError, "need to define `#{__method__}'"
-      end
-
-      private
-
-      def accept_self_instance_only(val)
-        raise PatternNotMatch unless val.kind_of?(self)
-      end
-    end
-
-    refine Array.singleton_class do
-      def deconstruct(val)
-        accept_self_instance_only(val)
-        val
-      end
-    end
-
-    refine Struct.singleton_class do
-      def deconstruct(val)
-        accept_self_instance_only(val)
-        val.values
-      end
-    end
-
-    refine Complex.singleton_class do
-      def deconstruct(val)
-        accept_self_instance_only(val)
-        val.rect
-      end
-    end
-
-    refine Rational.singleton_class do
-      def deconstruct(val)
-        accept_self_instance_only(val)
-        [val.numerator, val.denominator]
-      end
-    end
-
-    refine MatchData.singleton_class do
-      def deconstruct(val)
-        accept_self_instance_only(val)
-        val.captures.empty? ? [val[0]] : val.captures
-      end
-    end
-
-    if SUPPORT_REFINEMENTS
-      def Struct.method_added(name)
-        if name == members[0]
-          this = self
-          PatternMatch::NameSpace.module_eval do
-            refine this.singleton_class do
-              include Deconstructable
-            end
-          end
-        end
-      end
-
-      refine Proc do
-        include Deconstructable
-
-        def deconstruct(val)
-          [self === val]
-        end
-      end
-
-      refine Symbol do
-        include Deconstructable
-
-        def deconstruct(val)
-          [self.to_proc === val]
-        end
-      end
-    end
-
-    refine Symbol do
-      def call(*args)
-        Proc.new {|obj| obj.__send__(self, *args) }
-      end
-    end
-
-    refine Regexp do
-      include Deconstructable
-
-      def deconstruct(val)
-        m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)
-        raise PatternNotMatch unless m
-        m.captures.empty? ? [m[0]] : m.captures
-      end
-    end
   end
 
   class Pattern
     attr_accessor :parent, :next, :prev
-    attr_writer :pattern_match_env
 
     def initialize(*subpatterns)
       @parent = nil
       @next = nil
       @prev = nil
-      @pattern_match_env = nil
       @subpatterns = subpatterns.map {|i| i.kind_of?(Pattern) ? i : PatternValue.new(i) }
       set_subpatterns_relation
     end
@@ -187,10 +69,6 @@ module PatternMatch
       end
       raise MalformedPatternError if @subpatterns.count {|i| i.kind_of?(PatternQuantifier) } > 1
       @subpatterns.each(&:validate)
-    end
-
-    def pattern_match_env
-      @pattern_match_env || @parent.pattern_match_env
     end
 
     private
@@ -249,7 +127,7 @@ module PatternMatch
     end
 
     def match(val)
-      deconstructed_vals = pattern_match_env.call_refined_method(@deconstructor, :deconstruct, val)
+      deconstructed_vals = @deconstructor.deconstruct(val)
       k = deconstructed_vals.length - (@subpatterns.length - 2)
       quantifier = @subpatterns.find {|i| i.kind_of?(PatternQuantifier) }
       if quantifier
@@ -399,7 +277,6 @@ module PatternMatch
     def with(pat_or_val, guard_proc = nil, &block)
       pat = pat_or_val.kind_of?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
       pat.validate
-      pat.pattern_match_env = self
       if pat.match(@val) and (guard_proc ? with_tmpbinding(@ctx, pat.binding, &guard_proc) : true)
         ret = with_tmpbinding(@ctx, pat.binding, &block)
         ::Kernel.throw(:exit_match, ret)
@@ -428,10 +305,9 @@ module PatternMatch
       case vals.length
       when 0
         uscore = PatternVariable.new(:_)
-        uscore.pattern_match_env = self
         class << uscore
           def [](*args)
-            pattern_match_env.call_refined_method(::Array, :call, *args)
+            Array.call(*args)
           end
 
           def match(val)
@@ -523,13 +399,6 @@ module Kernel
   def match(*vals, &block)
     do_match = Proc.new do |val|
       env = PatternMatch.const_get(:Env).new(self, val)
-      class << env
-        using ::PatternMatch::NameSpace
-
-        def call_refined_method(obj, name, *args)
-          obj.__send__(name, *args)
-        end
-      end
       catch(:exit_match) do
         env.instance_eval(&block)
         raise ::PatternMatch::NoMatchingPatternError
@@ -543,5 +412,70 @@ module Kernel
     else
       raise ArgumentError, "wrong number of arguments (#{vals.length} for 0..1)"
     end
+  end
+end
+
+class Class
+  include PatternMatch::Deconstructable
+
+  def deconstruct(val)
+    raise NotImplementedError, "need to define `#{__method__}'"
+  end
+
+  private
+
+  def accept_self_instance_only(val)
+    raise PatternMatch::PatternNotMatch unless val.kind_of?(self)
+  end
+end
+
+class << Array
+  def deconstruct(val)
+    accept_self_instance_only(val)
+    val
+  end
+end
+
+class << Struct
+  def deconstruct(val)
+    accept_self_instance_only(val)
+    val.values
+  end
+end
+
+class << Complex
+  def deconstruct(val)
+    accept_self_instance_only(val)
+    val.rect
+  end
+end
+
+class << Rational
+  def deconstruct(val)
+    accept_self_instance_only(val)
+    [val.numerator, val.denominator]
+  end
+end
+
+class << MatchData
+  def deconstruct(val)
+    accept_self_instance_only(val)
+    val.captures.empty? ? [val[0]] : val.captures
+  end
+end
+
+class Regexp
+  include PatternMatch::Deconstructable
+
+  def deconstruct(val)
+    m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)
+    raise PatternMatch::PatternNotMatch unless m
+    m.captures.empty? ? [m[0]] : m.captures
+  end
+end
+
+class Symbol
+  def call(*args)
+    Proc.new {|obj| obj.__send__(self, *args) }
   end
 end
