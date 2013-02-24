@@ -64,8 +64,10 @@ module PatternMatch
 
     def validate
       if root?
-        dup_vars = vars - vars.uniq {|i| i.name }
-        raise MalformedPatternError, "duplicate variables: #{dup_vars.map(&:name).join(', ')}" unless dup_vars.empty?
+        dup_vars = vars - vars.uniq(&:name)
+        unless dup_vars.empty?
+          raise MalformedPatternError, "duplicate variables: #{dup_vars.map(&:name).join(', ')}"
+        end
       end
       raise MalformedPatternError if @subpatterns.count {|i| i.kind_of?(PatternQuantifier) } > 1
       @subpatterns.each(&:validate)
@@ -345,7 +347,8 @@ module PatternMatch
           obj.instance_eval(&block)
         ensure
           binding.each do |name, _|
-            if @stacks[name].tap(&:pop).empty?
+            @stacks[name].pop
+            if @stacks[name].empty?
               remove_method(name)
             end
           end
