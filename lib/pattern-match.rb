@@ -34,6 +34,10 @@ module PatternMatch
       @subpatterns.map(&:vars).flatten
     end
 
+    def ancestors
+      root? ? [self] : parent.ancestors.unshift(self)
+    end
+
     def binding
       vars.each_with_object({}) {|v, h| h[v.name] = v.val }
     end
@@ -83,16 +87,6 @@ module PatternMatch
         a.next = b
         b.prev = a
       end
-    end
-
-    def ancestors
-      ary = []
-      pat = self
-      until pat == nil
-        ary << pat
-        pat = pat.parent
-      end
-      ary
     end
   end
 
