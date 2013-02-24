@@ -76,6 +76,9 @@ or
 
 You can see another example in test/test_pattern-match.rb.
 
+== Reference
+* {Pattern Matching in Ruby (at Sapporo RubyKaigi 2012) // Speaker Deck}[https://speakerdeck.com/k_tsj/patternmatchinginruby]
+
 == Development
  $ git clone git://github.com/k-tsj/pattern-match.git
  $ cd pattern-match
