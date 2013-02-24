@@ -3,6 +3,10 @@
 A pattern matching library for Ruby.
 
 ==  Installation
+ $ gem install pattern-match
+
+or
+
  $ git clone git://github.com/k-tsj/pattern-match.git
  $ cd pattern-match
  $ gem build pattern-match.gemspec
