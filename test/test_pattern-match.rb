@@ -411,5 +411,10 @@ class TestPatternMatch < Test::Unit::TestCase
       }
       with(_) { flunk }
     }
+
+    match({a: 0}) {
+      with(Hash.(a: 0)) { pass }
+      with(_) { flunk }
+    }
   end
 end

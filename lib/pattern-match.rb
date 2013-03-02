@@ -96,7 +96,8 @@ module PatternMatch
   end
 
   class PatternHash < Pattern
-    def initialize(spec)
+    def initialize(subpatterns)
+      spec = Hash[subpatterns.map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
       super(*spec.values)
       @spec = spec
     end
