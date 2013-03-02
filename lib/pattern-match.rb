@@ -7,12 +7,20 @@ require 'pattern-match/version'
 module PatternMatch
   module Deconstructable
     def call(*subpatterns)
-      if Hash == self
-        raise MalformedPatternError unless subpatterns.length == 1
-        PatternHash.new(subpatterns[0])
-      else
-        PatternDeconstructor.new(self, *subpatterns)
-      end
+      pattern_matcher(*subpatterns)
+    end
+  end
+
+  class ::Object
+    def pattern_matcher(*subpatterns)
+      PatternDeconstructor.new(self, *subpatterns)
+    end
+  end
+
+  class << Hash
+    def pattern_matcher(*subpatterns)
+      raise MalformedPatternError unless subpatterns.length == 1
+      PatternHash.new(subpatterns[0])
     end
   end
 
