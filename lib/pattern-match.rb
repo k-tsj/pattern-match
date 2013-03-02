@@ -19,8 +19,17 @@ module PatternMatch
 
   class << Hash
     def pattern_matcher(*subpatterns)
-      raise MalformedPatternError unless subpatterns.length == 1
-      PatternHash.new(subpatterns[0])
+      syms = subpatterns.take_while {|i| i.kind_of?(Symbol) }
+      rest = subpatterns[syms.length..-1]
+      hash = case rest.length
+             when 0
+               {}
+             when 1
+               rest[0]
+             else
+               raise MalformedPatternError
+             end
+      PatternHash.new(syms.each_with_object({}) {|i, h| h[i] = PatternVariable.new(i) }.merge(hash))
     end
   end
 

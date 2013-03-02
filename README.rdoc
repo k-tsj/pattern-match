@@ -66,6 +66,13 @@ or
    }
  }
 
+ ## (E)
+ match({a: 0, b: 1, c: 2}) {
+   with(Hash.(:a, :b, c: 2)) {
+     p [a, b] #=> [0, 1]
+   }
+ }
+
 You can see another example in test/test_pattern-match.rb.
 
 == Reference

@@ -416,5 +416,23 @@ class TestPatternMatch < Test::Unit::TestCase
       with(Hash.(a: 0)) { pass }
       with(_) { flunk }
     }
+
+    match({a: 0, b: 1}) {
+      with(Hash.(:a, :b, :c)) { flunk }
+      with(Hash.(:a, :b)) {
+        assert_equal(0, a)
+        assert_equal(1, b)
+      }
+      with(_) { flunk }
+    }
+
+    match({a: 0, b: 1}) {
+      with(Hash.(:a, :b, b: b2)) {
+        assert_equal(0, a)
+        assert_raise(NameError) { b }
+        assert_equal(1, b2)
+      }
+      with(_) { flunk }
+    }
   end
 end
