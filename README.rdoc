@@ -66,14 +66,6 @@ or
    }
  }
 
- ## (E)
- match(10) {
-   with(Object.(:to_i => a, :foobar => b)) { :not_match }
-   with(Object.(:to_i => a, :to_s.(16) => b)) {
-     p [a, b] #=> [10, "a"]
-   }
- }
-
 You can see another example in test/test_pattern-match.rb.
 
 == Reference

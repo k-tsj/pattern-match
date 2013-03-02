@@ -7,10 +7,7 @@ require 'pattern-match/version'
 module PatternMatch
   module Deconstructable
     def call(*subpatterns)
-      if Object == self
-        raise MalformedPatternError unless subpatterns.length == 1
-        PatternObject.new(subpatterns[0])
-      elsif Hash == self
+      if Hash == self
         raise MalformedPatternError unless subpatterns.length == 1
         PatternHash.new(subpatterns[0])
       else
@@ -87,19 +84,6 @@ module PatternMatch
         a.next = b
         b.prev = a
       end
-    end
-  end
-
-  class PatternObject < Pattern
-    def initialize(spec)
-      super(*spec.values)
-      @spec = spec.map {|k, pat| [k.to_proc, pat] }
-    rescue
-      raise MalformedPatternError
-    end
-
-    def match(val)
-      @spec.all? {|k, pat| pat.match(k.(val)) rescue raise PatternNotMatch }
     end
   end
 
@@ -468,11 +452,5 @@ class Regexp
     m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)
     raise PatternMatch::PatternNotMatch unless m
     m.captures.empty? ? [m[0]] : m.captures
-  end
-end
-
-class Symbol
-  def call(*args)
-    Proc.new {|obj| obj.__send__(self, *args) }
   end
 end

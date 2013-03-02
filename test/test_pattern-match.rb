@@ -395,23 +395,6 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_object
-    match(10) {
-      with(Object.(:to_i => a, :to_s.(16) => b, :no_method => c)) { flunk }
-      with(Object.(:to_i => a, :to_s.(16) => b)) {
-        assert_equal(10, a)
-        assert_equal('a', b)
-      }
-      with(_) { flunk }
-    }
-
-    assert_raise(PatternMatch::MalformedPatternError) {
-      match(10) {
-        with(Object.(a, b)) {}
-      }
-    }
-  end
-
   def test_hash
     match({a: 0, b: 1}) {
       with(Hash.(a: a, b: b, c: c)) { flunk }
