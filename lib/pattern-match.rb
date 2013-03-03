@@ -13,7 +13,7 @@ module PatternMatch
 
   class ::Object
     def pattern_matcher(*subpatterns)
-      PatternDeconstructor.new(self, *subpatterns)
+      PatternObjectDeconstructor.new(self, *subpatterns)
     end
   end
 
@@ -29,7 +29,7 @@ module PatternMatch
              else
                raise MalformedPatternError
              end
-      PatternHash.new(syms.each_with_object({}) {|i, h| h[i] = PatternVariable.new(i) }.merge(hash))
+      PatternHashDeconstructor.new(syms.each_with_object({}) {|i, h| h[i] = PatternVariable.new(i) }.merge(hash))
     end
   end
 
@@ -137,21 +137,10 @@ module PatternMatch
     end
   end
 
-  class PatternHash < PatternElement
-    def initialize(subpatterns)
-      spec = Hash[subpatterns.map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
-      super(*spec.values)
-      @spec = spec
-    end
-
-    def match(val)
-      raise PatternNotMatch unless val.kind_of?(Hash)
-      raise PatternNotMatch unless @spec.keys.all? {|k| val.has_key?(k) }
-      @spec.all? {|k, pat| pat.match(val[k]) rescue raise PatternNotMatch }
-    end
+  class PatternDeconstructor < PatternElement
   end
 
-  class PatternDeconstructor < PatternElement
+  class PatternObjectDeconstructor < PatternDeconstructor
     def initialize(deconstructor, *subpatterns)
       super(*subpatterns)
       @deconstructor = deconstructor
@@ -179,6 +168,20 @@ module PatternMatch
       end.zip(deconstructed_vals).all? do |pat, v|
         pat.match(v)
       end
+    end
+  end
+
+  class PatternHashDeconstructor < PatternDeconstructor
+    def initialize(subpatterns)
+      spec = Hash[subpatterns.map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
+      super(*spec.values)
+      @spec = spec
+    end
+
+    def match(val)
+      raise PatternNotMatch unless val.kind_of?(Hash)
+      raise PatternNotMatch unless @spec.keys.all? {|k| val.has_key?(k) }
+      @spec.all? {|k, pat| pat.match(val[k]) rescue raise PatternNotMatch }
     end
   end
 
