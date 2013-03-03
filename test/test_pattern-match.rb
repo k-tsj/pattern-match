@@ -216,6 +216,12 @@ class TestPatternMatch < Test::Unit::TestCase
 
     assert_raise(PatternMatch::MalformedPatternError) {
       match(0) {
+        with(___) {}
+      }
+    }
+
+    assert_raise(PatternMatch::MalformedPatternError) {
+      match(0) {
         with(_[___]) {}
       }
     }
