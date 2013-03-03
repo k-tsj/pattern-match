@@ -33,6 +33,21 @@ module PatternMatch
     end
   end
 
+  #
+  # Class Hierarchy
+  #
+  #   Pattern
+  #     PatternQuantifier
+  #     PatternElement
+  #       PatternDeconstructor
+  #         PatternObjectDeconstructor
+  #         PatternHashDeconstructor
+  #       PatternVariable
+  #       PatternValue
+  #       PatternAnd
+  #       PatternOr
+  #       PatternNot
+  #
   class Pattern
     attr_accessor :parent, :next, :prev
 
