@@ -72,8 +72,12 @@ module PatternMatch
       [self, PatternQuantifier.new(0)]
     end
 
+    def quantifier?
+      raise NotImplementedError
+    end
+
     def quantified?
-      @next.kind_of?(PatternQuantifier) || (root? ? false : @parent.quantified?)
+      (@next && @next.quantifier?) || (root? ? false : @parent.quantified?)
     end
 
     def root?
@@ -87,7 +91,7 @@ module PatternMatch
           raise MalformedPatternError, "duplicate variables: #{dup_vars.map(&:name).join(', ')}"
         end
       end
-      raise MalformedPatternError if @subpatterns.count {|i| i.kind_of?(PatternQuantifier) } > 1
+      raise MalformedPatternError if @subpatterns.count {|i| i.quantifier? } > 1
       @subpatterns.each(&:validate)
     end
 
@@ -100,51 +104,6 @@ module PatternMatch
       @subpatterns.each_cons(2) do |a, b|
         a.next = b
         b.prev = a
-      end
-    end
-  end
-
-  class PatternHash < Pattern
-    def initialize(subpatterns)
-      spec = Hash[subpatterns.map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
-      super(*spec.values)
-      @spec = spec
-    end
-
-    def match(val)
-      raise PatternNotMatch unless val.kind_of?(Hash)
-      raise PatternNotMatch unless @spec.keys.all? {|k| val.has_key?(k) }
-      @spec.all? {|k, pat| pat.match(val[k]) rescue raise PatternNotMatch }
-    end
-  end
-
-  class PatternDeconstructor < Pattern
-    def initialize(deconstructor, *subpatterns)
-      super(*subpatterns)
-      @deconstructor = deconstructor
-    end
-
-    def match(val)
-      deconstructed_vals = @deconstructor.deconstruct(val)
-      k = deconstructed_vals.length - (@subpatterns.length - 2)
-      quantifier = @subpatterns.find {|i| i.kind_of?(PatternQuantifier) }
-      if quantifier
-        return false unless quantifier.min_k <= k
-      else
-        return false unless @subpatterns.length == deconstructed_vals.length
-      end
-      @subpatterns.flat_map do |pat|
-        case
-        when pat.next.kind_of?(PatternQuantifier)
-          []
-        when pat.kind_of?(PatternQuantifier)
-          pat.prev.vars.each {|v| v.set_bind_to(pat) }
-          Array.new(k, pat.prev)
-        else
-          [pat]
-        end
-      end.zip(deconstructed_vals).all? do |pat, v|
-        pat.match(v)
       end
     end
   end
@@ -166,9 +125,64 @@ module PatternMatch
       raise MalformedPatternError unless @prev
       raise MalformedPatternError unless @parent.kind_of?(PatternDeconstructor)
     end
+
+    def quantifier?
+      true
+    end
   end
 
-  class PatternVariable < Pattern
+  class PatternElement < Pattern
+    def quantifier?
+      false
+    end
+  end
+
+  class PatternHash < PatternElement
+    def initialize(subpatterns)
+      spec = Hash[subpatterns.map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
+      super(*spec.values)
+      @spec = spec
+    end
+
+    def match(val)
+      raise PatternNotMatch unless val.kind_of?(Hash)
+      raise PatternNotMatch unless @spec.keys.all? {|k| val.has_key?(k) }
+      @spec.all? {|k, pat| pat.match(val[k]) rescue raise PatternNotMatch }
+    end
+  end
+
+  class PatternDeconstructor < PatternElement
+    def initialize(deconstructor, *subpatterns)
+      super(*subpatterns)
+      @deconstructor = deconstructor
+    end
+
+    def match(val)
+      deconstructed_vals = @deconstructor.deconstruct(val)
+      k = deconstructed_vals.length - (@subpatterns.length - 2)
+      quantifier = @subpatterns.find(&:quantifier?)
+      if quantifier
+        return false unless quantifier.min_k <= k
+      else
+        return false unless @subpatterns.length == deconstructed_vals.length
+      end
+      @subpatterns.flat_map do |pat|
+        case
+        when pat.next && pat.next.quantifier?
+          []
+        when pat.quantifier?
+          pat.prev.vars.each {|v| v.set_bind_to(pat) }
+          Array.new(k, pat.prev)
+        else
+          [pat]
+        end
+      end.zip(deconstructed_vals).all? do |pat, v|
+        pat.match(v)
+      end
+    end
+  end
+
+  class PatternVariable < PatternElement
     attr_reader :name, :val
 
     def initialize(name)
@@ -211,12 +225,12 @@ module PatternMatch
     end
 
     def nest_level(quantifier)
-      qs = ancestors.map {|i| i.next.kind_of?(PatternQuantifier) ? i.next : nil }.find_all {|i| i }.reverse
+      qs = ancestors.map {|i| (i.next and i.next.quantifier?) ? i.next : nil }.find_all {|i| i }.reverse
       qs.index(quantifier) || (raise PatternMatchError)
     end
   end
 
-  class PatternValue < Pattern
+  class PatternValue < PatternElement
     def initialize(val, compare_by = :===)
       super()
       @val = val
@@ -228,13 +242,13 @@ module PatternMatch
     end
   end
 
-  class PatternAnd < Pattern
+  class PatternAnd < PatternElement
     def match(val)
       @subpatterns.all? {|i| i.match(val) }
     end
   end
 
-  class PatternOr < Pattern
+  class PatternOr < PatternElement
     def match(val)
       @subpatterns.find do |i|
         begin
@@ -251,7 +265,7 @@ module PatternMatch
     end
   end
 
-  class PatternNot < Pattern
+  class PatternNot < PatternElement
     def match(val)
       ! @subpatterns[0].match(val)
     rescue PatternNotMatch
