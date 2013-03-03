@@ -403,7 +403,7 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
-  def test_hash
+  def test_deconstructor_class_hash
     match({a: 0, b: 1}) {
       with(Hash.(a: a, b: b, c: c)) { flunk }
       with(Hash.(a: a, b: b)) {
