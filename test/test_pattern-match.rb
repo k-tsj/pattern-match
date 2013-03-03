@@ -274,7 +274,9 @@ class TestPatternMatch < Test::Unit::TestCase
     }
 
     match(1) {
-      with(_(0) | _(1)) { pass }
+      # You can not just write `with(0 | 1)',
+      # because alternation method `|' is an instance method of Pattern.
+      with(_ & 0 | 1) { pass }
       with(_) { flunk }
     }
 
