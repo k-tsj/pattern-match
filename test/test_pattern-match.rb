@@ -342,6 +342,20 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
+  def test_deconstructor_class_attributes_with_hash
+    person_class = Struct.new(:name, :age) do
+      include PatternMatch::ObjectHashMatcher
+    end
+    
+    match(person_class.new("Mary", 50)) {
+      with(person_class.(:name => name, :age => age)) {
+        assert_equal("Mary", name)
+        assert_equal(50, age)
+      }
+      with(_) { flunk }
+    }
+  end
+
   def test_deconstructor_class_complex
     match(Complex(0, 1)) {
       with(Complex.(a, b)) {

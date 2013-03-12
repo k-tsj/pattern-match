@@ -17,6 +17,29 @@ module PatternMatch
     end
   end
 
+  module ObjectHashMatcher
+    def self.included(klass)
+      klass.send(:extend, ClassMethods)
+    end
+      
+    module ClassMethods
+      def pattern_matcher(*subpatterns)
+        syms = subpatterns.take_while { |s| s.kind_of?(Symbol) }
+        rest = subpatterns.drop(syms.length)
+        hash = case rest.length
+        when 0
+          {}
+        when 1
+          rest[0]
+        else
+          raise MalformedPatternError
+        end
+        variables = Hash[syms.map { |i, h| [i, PatternVariable.new(i)] }]
+        PatternObjectHashDeconstructor.new(self, hash.merge(variables))
+      end
+    end
+  end
+
   class << Hash
     def pattern_matcher(*subpatterns)
       syms = subpatterns.take_while {|i| i.kind_of?(Symbol) }
@@ -182,6 +205,27 @@ module PatternMatch
         end
       end.zip(deconstructed_vals).all? do |pat, v|
         pat.match(v)
+      end
+    end
+  end
+
+  class PatternObjectHashDeconstructor < PatternDeconstructor
+    def initialize(klass, subpatterns)
+      spec = Hash[subpatterns.map do |k, v| 
+        [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] 
+      end]
+      super(*spec.values)
+      @klass = klass
+      @spec = spec
+    end
+
+    def match(val)
+      if !val.kind_of?(@klass)
+        raise PatternNotMatch
+      elseif @spec.keys.any? {|k| !val.respond_to?(k) }
+        raise PatternNotMatch
+      else
+        @spec.all? { |k, pat| pat.match(val.send(k)) rescue raise PatternNotMatch }
       end
     end
   end
