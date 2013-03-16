@@ -7,7 +7,11 @@ require 'pattern-match/version'
 module PatternMatch
   module Deconstructable
     def call(*subpatterns)
-      pattern_matcher(*subpatterns)
+      if Object == self
+        PatternKeywordArgStyleDeconstructor.new(Object, :respond_to?, :__send__, *subpatterns)
+      else
+        pattern_matcher(*subpatterns)
+      end
     end
   end
 

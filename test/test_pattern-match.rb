@@ -463,4 +463,21 @@ class TestPatternMatch < Test::Unit::TestCase
       with(_) { flunk }
     }
   end
+
+  def test_object
+    match(0) {
+      with(Object.(:to_s, :to_i => i & 1)) { flunk }
+      with(Object.(:to_s, :to_i => i & 0)) {
+        assert_equal('0', to_s)
+        assert_equal(0, i)
+      }
+      with(_) { flunk }
+    }
+
+    assert_raise(PatternMatch::MalformedPatternError) {
+      match(0) {
+        with(Object.(a, b)) {}
+      }
+    }
+  end
 end
