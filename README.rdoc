@@ -36,6 +36,18 @@ or
    }
  }
 
+ match([[0, :a], [1]]) {
+   with(_[_[a & Fixnum, ___, *b], ___]) {
+     p [a, b] #=> [[[0], [1]], [[:a], []]]
+   }
+ }
+
+ match([0, 1, 2, 3, 4]) {
+   with(_[*_, a & Fixnum, ___, *_], guard { a.inject(:*) == 6 }) {
+     p a #=> [2, 3]
+   }
+ }
+
  ## (C)
  # balance in a red-black tree
  Node = Struct.new(:left, :key, :right)

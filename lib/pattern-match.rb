@@ -41,21 +41,6 @@ module PatternMatch
     end
   end
 
-  #
-  # Class Hierarchy
-  #
-  #   Pattern
-  #     PatternQuantifier
-  #     PatternElement
-  #       PatternDeconstructor
-  #         PatternObjectDeconstructor
-  #         PatternKeywordArgStyleDeconstructor
-  #       PatternVariable
-  #       PatternValue
-  #       PatternAnd
-  #       PatternOr
-  #       PatternNot
-  #
   class Pattern
     attr_accessor :parent, :next, :prev
 
@@ -92,7 +77,7 @@ module PatternMatch
     end
 
     def to_a
-      [self, PatternQuantifier.new(0)]
+      [self, PatternQuantifier.new(0, true)]
     end
 
     def quantifier?
@@ -101,6 +86,10 @@ module PatternMatch
 
     def quantified?
       (@next && @next.quantifier?) || (root? ? false : @parent.quantified?)
+    end
+
+    def root
+      root? ? self : @parent.root
     end
 
     def root?
@@ -114,19 +103,80 @@ module PatternMatch
           raise MalformedPatternError, "duplicate variables: #{dup_vars.map(&:name).join(', ')}"
         end
       end
-      raise MalformedPatternError if @subpatterns.count {|i| i.quantifier? } > 1
       @subpatterns.each(&:validate)
+    end
+
+    def match(vals)
+      if @next && @next.quantifier?
+        q = @next
+        repeating_match(vals, q.longest?) do |vs, rest|
+          if vs.length < q.min_k
+            next false
+          end
+          vs.all? {|v| yield(v) } and q.match(rest)
+        end
+      else
+        if vals.empty?
+          return false
+        end
+        val, *rest = vals
+        if yield(val)
+          if @next
+            @next.match(rest)
+          else
+            rest.empty?
+          end
+        else
+          false
+        end
+      end
+    end
+
+    def append(pattern)
+      if @next
+        @next.append(pattern)
+      else
+        if @subpatterns.empty?
+          if root?
+            new_root = PatternAnd.new(self)
+            self.parent = new_root
+          end
+          pattern.parent = @parent
+          @next = pattern
+        else
+          @subpatterns[-1].append(pattern)
+        end
+      end
     end
 
     private
 
+    def repeating_match(vals, longest)
+      quantifier = @next
+      lp = longest_patterns(vals)
+      (longest ? lp : lp.reverse).each do |(vs, rest)|
+        begin
+          vars.each {|i| i.set_bind_to(quantifier) }
+          if yield vs, rest
+            return true
+          end
+          vars.each {|i| i.unset_bind_to(quantifier) }
+        rescue PatternNotMatch
+          vars.each {|i| i.unset_bind_to(quantifier) }
+        end
+      end
+      false
+    end
+
+    def longest_patterns(vals)
+      vals.length.downto(0).map do |n|
+        [vals.take(n), vals.drop(n)]
+      end
+    end
+
     def set_subpatterns_relation
       @subpatterns.each do |i|
         i.parent = self
-      end
-      @subpatterns.each_cons(2) do |a, b|
-        a.next = b
-        b.prev = a
       end
     end
   end
@@ -134,23 +184,32 @@ module PatternMatch
   class PatternQuantifier < Pattern
     attr_reader :min_k
 
-    def initialize(min_k)
+    def initialize(min_k, longest)
       super()
       @min_k = min_k
-    end
-
-    def match(val)
-      raise PatternMatchError, 'must not happen'
+      @longest = longest
     end
 
     def validate
       super
-      raise MalformedPatternError unless @prev
+      raise MalformedPatternError unless @prev and ! @prev.quantifier?
       raise MalformedPatternError unless @parent.kind_of?(PatternDeconstructor)
     end
 
     def quantifier?
       true
+    end
+
+    def match(vals)
+      if @next
+        @next.match(vals)
+      else
+        vals.empty?
+      end
+    end
+
+    def longest?
+      @longest
     end
   end
 
@@ -169,27 +228,23 @@ module PatternMatch
       @deconstructor = deconstructor
     end
 
-    def match(val)
-      deconstructed_vals = @deconstructor.deconstruct(val)
-      k = deconstructed_vals.length - (@subpatterns.length - 2)
-      quantifier = @subpatterns.find(&:quantifier?)
-      if quantifier
-        return false unless quantifier.min_k <= k
-      else
-        return false unless @subpatterns.length == deconstructed_vals.length
-      end
-      @subpatterns.flat_map do |pat|
-        case
-        when pat.next && pat.next.quantifier?
-          []
-        when pat.quantifier?
-          pat.prev.vars.each {|v| v.set_bind_to(pat) }
-          Array.new(k, pat.prev)
-        else
-          [pat]
+    def match(vals)
+      super do |val|
+        deconstructed_vals = @deconstructor.deconstruct(val)
+        if @subpatterns.empty?
+          next deconstructed_vals.empty?
         end
-      end.zip(deconstructed_vals).all? do |pat, v|
-        pat.match(v)
+        @subpatterns[0].match(deconstructed_vals)
+      end
+    end
+
+    private
+
+    def set_subpatterns_relation
+      super
+      @subpatterns.each_cons(2) do |a, b|
+        a.next = b
+        b.prev = a
       end
     end
   end
@@ -204,10 +259,14 @@ module PatternMatch
       @spec = spec
     end
 
-    def match(val)
-      raise PatternNotMatch unless val.kind_of?(@klass)
-      raise PatternNotMatch unless @spec.keys.all? {|k| val.__send__(@checker, k) }
-      @spec.all? {|k, pat| pat.match(val.__send__(@getter, k)) rescue raise PatternNotMatch }
+    def match(vals)
+      super do |val|
+        next false unless val.kind_of?(@klass)
+        next false unless @spec.keys.all? {|k| val.__send__(@checker, k) }
+        @spec.all? do |k, pat|
+          pat.match([val.__send__(@getter, k)]) rescue false
+        end
+      end
     end
 
     private
@@ -238,9 +297,11 @@ module PatternMatch
       @bind_to = nil
     end
 
-    def match(val)
-      bind(val)
-      true
+    def match(vals)
+      super do |val|
+        bind(val)
+        true
+      end
     end
 
     def vars
@@ -248,15 +309,30 @@ module PatternMatch
     end
 
     def set_bind_to(quantifier)
-      if @val
+      n = nest_level(quantifier)
+      if n == 0
+        @val = @bind_to = []
+      else
         outer = @val
-        (nest_level(quantifier) - 1).times do
+        (n - 1).times do
           outer = outer[-1]
         end
         @bind_to = []
         outer << @bind_to
+      end
+    end
+
+    def unset_bind_to(quantifier)
+      n = nest_level(quantifier)
+      @bind_to = nil
+      if n == 0
+        # do nothing
       else
-        @val = @bind_to = []
+        outer = @val
+        (n - 1).times do
+          outer = outer[-1]
+        end
+        outer.pop
       end
     end
 
@@ -283,24 +359,30 @@ module PatternMatch
       @compare_by = compare_by
     end
 
-    def match(val)
-      @val.__send__(@compare_by, val)
+    def match(vals)
+      super do |val|
+        @val.__send__(@compare_by, val)
+      end
     end
   end
 
   class PatternAnd < PatternElement
-    def match(val)
-      @subpatterns.all? {|i| i.match(val) }
+    def match(vals)
+      super do |val|
+        @subpatterns.all? {|i| i.match([val]) }
+      end
     end
   end
 
   class PatternOr < PatternElement
-    def match(val)
-      @subpatterns.find do |i|
-        begin
-          i.match(val)
-        rescue PatternNotMatch
-          false
+    def match(vals)
+      super do |val|
+        @subpatterns.find do |i|
+          begin
+            i.match([val])
+          rescue PatternNotMatch
+            false
+          end
         end
       end
     end
@@ -312,15 +394,40 @@ module PatternMatch
   end
 
   class PatternNot < PatternElement
-    def match(val)
-      ! @subpatterns[0].match(val)
-    rescue PatternNotMatch
-      true
+    def match(vals)
+      super do |val|
+        begin
+          ! @subpatterns[0].match([val])
+        rescue PatternNotMatch
+          true
+        end
+      end
     end
 
     def validate
       super
       raise MalformedPatternError unless vars.length == 0
+    end
+  end
+
+  class PatternGuard < PatternElement
+    def initialize(guard_proc, ctx)
+      super()
+      @guard_proc = guard_proc
+      @ctx = ctx
+    end
+
+    def match(vals)
+      PatternMatch.with_tmpbinding(@ctx, root.binding, &@guard_proc)
+    end
+
+    def validate
+      super
+      pat = self
+      until pat.root?
+        raise MalformedPatternError if pat.next
+        pat = pat.parent
+      end
     end
   end
 
@@ -334,9 +441,12 @@ module PatternMatch
 
     def with(pat_or_val, guard_proc = nil, &block)
       pat = pat_or_val.kind_of?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
+      if guard_proc
+        pat.append(PatternGuard.new(guard_proc, @ctx))
+      end
       pat.validate
-      if pat.match(@val) and (guard_proc ? with_tmpbinding(@ctx, pat.binding, &guard_proc) : true)
-        ret = with_tmpbinding(@ctx, pat.binding, &block)
+      if pat.match([@val])
+        ret = ::PatternMatch.with_tmpbinding(@ctx, pat.binding, &block)
         ::Kernel.throw(:exit_match, ret)
       else
         nil
@@ -351,9 +461,11 @@ module PatternMatch
     def method_missing(name, *)
       case name.to_s
       when '___'
-        PatternQuantifier.new(0)
-      when /\A__(\d+)\z/
-        PatternQuantifier.new($1.to_i)
+        PatternQuantifier.new(0, true)
+      when '___?'
+        PatternQuantifier.new(0, false)
+      when /\A__(\d+)(\??)\z/
+        PatternQuantifier.new($1.to_i, ! $2.empty?)
       else
         PatternVariable.new(name)
       end
@@ -368,12 +480,13 @@ module PatternMatch
             Array.call(*args)
           end
 
-          def match(val)
-            true
-          end
-
           def vars
             []
+          end
+
+          private
+
+          def bind(val)
           end
         end
         uscore
@@ -388,58 +501,60 @@ module PatternMatch
 
     alias __ _
     alias _l _
+  end
 
-    def with_tmpbinding(obj, binding, &block)
-      tmpbinding_module(obj).instance_eval do
-        begin
-          binding.each do |name, val|
-            stack = @stacks[name]
-            if stack.empty?
-              define_method(name) { stack[-1] }
-              private name
-            end
-            stack.push(val)
+  class TmpBindingModule < ::Module
+  end
+
+  def with_tmpbinding(obj, binding, &block)
+    tmpbinding_module(obj).instance_eval do
+      begin
+        binding.each do |name, val|
+          stack = @stacks[name]
+          if stack.empty?
+            define_method(name) { stack[-1] }
+            private name
           end
-          obj.instance_eval(&block)
-        ensure
-          binding.each do |name, _|
-            @stacks[name].pop
-            if @stacks[name].empty?
-              remove_method(name)
-            end
-          end
+          stack.push(val)
         end
-      end
-    end
-
-    class TmpBindingModule < ::Module
-    end
-
-    def tmpbinding_module(obj)
-      m = obj.singleton_class.ancestors.find {|i| i.kind_of?(TmpBindingModule) }
-      unless m
-        m = TmpBindingModule.new
-        m.instance_eval do
-          @stacks = ::Hash.new {|h, k| h[k] = [] }
-        end
-        obj.singleton_class.class_eval do
-          if respond_to?(:prepend, true)
-            prepend m
-          else
-            include m
+        obj.instance_eval(&block)
+      ensure
+        binding.each do |name, _|
+          @stacks[name].pop
+          if @stacks[name].empty?
+            remove_method(name)
           end
         end
       end
-      m
     end
   end
+  module_function :with_tmpbinding
+
+  def tmpbinding_module(obj)
+    m = obj.singleton_class.ancestors.find {|i| i.kind_of?(TmpBindingModule) }
+    unless m
+      m = TmpBindingModule.new
+      m.instance_eval do
+        @stacks = ::Hash.new {|h, k| h[k] = [] }
+      end
+      obj.singleton_class.class_eval do
+        if respond_to?(:prepend, true)
+          prepend m
+        else
+          include m
+        end
+      end
+    end
+    m
+  end
+  module_function :tmpbinding_module
 
   class PatternNotMatch < Exception; end
   class PatternMatchError < StandardError; end
   class NoMatchingPatternError < PatternMatchError; end
   class MalformedPatternError < PatternMatchError; end
 
-  # Make Pattern and its subclasses/Env private.
+  # Make Pattern and its subclasses/Env/TmpBindingModule private.
   if respond_to?(:private_constant)
     constants.each do |c|
       klass = const_get(c)
@@ -449,6 +564,7 @@ module PatternMatch
       end
     end
     private_constant :Env
+    private_constant :TmpBindingModule
   end
 end
 

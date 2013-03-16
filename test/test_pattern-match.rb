@@ -152,9 +152,10 @@ class TestPatternMatch < Test::Unit::TestCase
       with(_) { flunk }
     }
 
-    assert_raise(PatternMatch::MalformedPatternError) {
-      match(0) {
-        with(_[*a, *b]) {}
+    match([0]) {
+      with(_[*a, *b]) {
+        assert_equal([0], a)
+        assert_equal([], b)
       }
     }
   end
@@ -238,10 +239,39 @@ class TestPatternMatch < Test::Unit::TestCase
       }
     }
 
-    assert_raise(PatternMatch::MalformedPatternError) {
-      match(0) {
-        with(_[a, ___, *b]) {}
+    match([0]) {
+      with(_[a, ___, *b]) {
+        assert_equal([0], a)
+        assert_equal([], b)
       }
+      with(_) { flunk }
+    }
+
+    match([0]) {
+      with(_[a, ___?, *b]) {
+        assert_equal([], a)
+        assert_equal([0], b)
+      }
+      with(_) { flunk }
+    }
+
+    match([[0, 1, :a, 'A'], [2, :b, :c, 'B'], ['C'], 3]) {
+      with(_[_[a & Fixnum, ___, b & Symbol, ___, c], ___, d]) {
+        assert_equal([[0, 1], [2], []], a)
+        assert_equal([[:a], [:b, :c], []], b)
+        assert_equal(['A', 'B', 'C'], c)
+        assert_equal(3, d)
+      }
+      with(_) { flunk }
+    }
+
+    match([0, 1, 2, 4, 5]) {
+      with(_[*a, b & Fixnum, __2, *c], guard { b.all?(&:even?) }) {
+        assert_equal([0, 1], a)
+        assert_equal([2, 4], b)
+        assert_equal([5], c)
+      }
+      with(_) { flunk }
     }
   end
 
