@@ -342,6 +342,26 @@ class TestPatternMatch < Test::Unit::TestCase
     }
   end
 
+  def test_deconstructor_class_attributes_with_hash
+    person_class = Struct.new(:name, :age) do
+      include PatternMatch::AttributeMatcher
+    end
+
+    company_class = Struct.new(:name) do
+      include PatternMatch::AttributeMatcher
+    end
+
+    match([person_class.new("Mary", 50), company_class.new("C")]) {
+      with(_[company_class.(:name => "Mary"), company_class.(:name => "C")]) { flunk }
+      with(_[person_class.(:age, :name => person_name), company_class.(:name => company_name)]) {
+        assert_equal("Mary", person_name)
+        assert_equal(50, age)
+        assert_equal("C", company_name)
+      }
+      with(_) { flunk }
+    }
+  end
+
   def test_deconstructor_class_complex
     match(Complex(0, 1)) {
       with(Complex.(a, b)) {
@@ -441,6 +461,23 @@ class TestPatternMatch < Test::Unit::TestCase
         assert_equal(1, b2)
       }
       with(_) { flunk }
+    }
+  end
+
+  def test_object
+    match(0) {
+      with(Object.(:to_s, :to_i => i & 1)) { flunk }
+      with(Object.(:to_s, :to_i => i & 0)) {
+        assert_equal('0', to_s)
+        assert_equal(0, i)
+      }
+      with(_) { flunk }
+    }
+
+    assert_raise(PatternMatch::MalformedPatternError) {
+      match(0) {
+        with(Object.(a, b)) {}
+      }
     }
   end
 end
