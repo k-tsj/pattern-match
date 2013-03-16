@@ -17,42 +17,23 @@ module PatternMatch
     end
   end
 
-  module ObjectHashMatcher
+  module AttributeMatcher
     def self.included(klass)
-      klass.send(:extend, ClassMethods)
-    end
-      
-    module ClassMethods
-      def pattern_matcher(*subpatterns)
-        syms = subpatterns.take_while { |s| s.kind_of?(Symbol) }
-        rest = subpatterns.drop(syms.length)
-        hash = case rest.length
-        when 0
-          {}
-        when 1
-          rest[0]
-        else
-          raise MalformedPatternError
+      class << klass
+        def pattern_matcher(*subpatterns)
+          PatternKeywordArgStyleDeconstructor.new(self, :respond_to?, :__send__, *subpatterns)
         end
-        variables = Hash[syms.map { |i, h| [i, PatternVariable.new(i)] }]
-        PatternObjectHashDeconstructor.new(self, hash.merge(variables))
       end
     end
   end
 
-  class << Hash
-    def pattern_matcher(*subpatterns)
-      syms = subpatterns.take_while {|i| i.kind_of?(Symbol) }
-      rest = subpatterns[syms.length..-1]
-      hash = case rest.length
-             when 0
-               {}
-             when 1
-               rest[0]
-             else
-               raise MalformedPatternError
-             end
-      PatternHashDeconstructor.new(syms.each_with_object({}) {|i, h| h[i] = PatternVariable.new(i) }.merge(hash))
+  module KeyMatcher
+    def self.included(klass)
+      class << klass
+        def pattern_matcher(*subpatterns)
+          PatternKeywordArgStyleDeconstructor.new(self, :has_key?, :[], *subpatterns)
+        end
+      end
     end
   end
 
@@ -64,7 +45,7 @@ module PatternMatch
   #     PatternElement
   #       PatternDeconstructor
   #         PatternObjectDeconstructor
-  #         PatternHashDeconstructor
+  #         PatternKeywordArgStyleDeconstructor
   #       PatternVariable
   #       PatternValue
   #       PatternAnd
@@ -209,38 +190,37 @@ module PatternMatch
     end
   end
 
-  class PatternObjectHashDeconstructor < PatternDeconstructor
-    def initialize(klass, subpatterns)
-      spec = Hash[subpatterns.map do |k, v| 
-        [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] 
-      end]
+  class PatternKeywordArgStyleDeconstructor < PatternDeconstructor
+    def initialize(klass, checker, getter, *keyarg_subpatterns)
+      spec = normalize_keyword_arg(keyarg_subpatterns)
       super(*spec.values)
       @klass = klass
+      @checker = checker
+      @getter = getter
       @spec = spec
     end
 
     def match(val)
-      if !val.kind_of?(@klass)
-        raise PatternNotMatch
-      elseif @spec.keys.any? {|k| !val.respond_to?(k) }
-        raise PatternNotMatch
-      else
-        @spec.all? { |k, pat| pat.match(val.send(k)) rescue raise PatternNotMatch }
-      end
-    end
-  end
-
-  class PatternHashDeconstructor < PatternDeconstructor
-    def initialize(subpatterns)
-      spec = Hash[subpatterns.map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
-      super(*spec.values)
-      @spec = spec
+      raise PatternNotMatch unless val.kind_of?(@klass)
+      raise PatternNotMatch unless @spec.keys.all? {|k| val.__send__(@checker, k) }
+      @spec.all? {|k, pat| pat.match(val.__send__(@getter, k)) rescue raise PatternNotMatch }
     end
 
-    def match(val)
-      raise PatternNotMatch unless val.kind_of?(Hash)
-      raise PatternNotMatch unless @spec.keys.all? {|k| val.has_key?(k) }
-      @spec.all? {|k, pat| pat.match(val[k]) rescue raise PatternNotMatch }
+    private
+
+    def normalize_keyword_arg(subpatterns)
+      syms = subpatterns.take_while {|i| i.kind_of?(Symbol) }
+      rest = subpatterns.drop(syms.length)
+      hash = case rest.length
+             when 0
+               {}
+             when 1
+               rest[0]
+             else
+               raise MalformedPatternError
+             end
+      variables = Hash[syms.map {|i, h| [i, PatternVariable.new(i)] }]
+      Hash[variables.merge(hash).map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
     end
   end
 
@@ -502,6 +482,10 @@ class Class
   def accept_self_instance_only(val)
     raise PatternMatch::PatternNotMatch unless val.kind_of?(self)
   end
+end
+
+class Hash
+  include PatternMatch::KeyMatcher
 end
 
 class << Array

@@ -344,13 +344,19 @@ class TestPatternMatch < Test::Unit::TestCase
 
   def test_deconstructor_class_attributes_with_hash
     person_class = Struct.new(:name, :age) do
-      include PatternMatch::ObjectHashMatcher
+      include PatternMatch::AttributeMatcher
     end
-    
-    match(person_class.new("Mary", 50)) {
-      with(person_class.(:name => name, :age => age)) {
-        assert_equal("Mary", name)
+
+    company_class = Struct.new(:name) do
+      include PatternMatch::AttributeMatcher
+    end
+
+    match([person_class.new("Mary", 50), company_class.new("C")]) {
+      with(_[company_class.(:name => "Mary"), company_class.(:name => "C")]) { flunk }
+      with(_[person_class.(:age, :name => person_name), company_class.(:name => company_name)]) {
+        assert_equal("Mary", person_name)
         assert_equal(50, age)
+        assert_equal("C", company_name)
       }
       with(_) { flunk }
     }
