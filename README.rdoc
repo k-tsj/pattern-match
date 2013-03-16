@@ -22,31 +22,31 @@ or
  require 'pattern-match'
 
  ## (A)
- match([0, [1, 2, 3, 4]]) {
-   with(_[a, _[b, *c, d]]) { # Same as `Array.(a, Array.(b, *c, d))'
+ match([0, [1, 2, 3, 4]]) do
+   with(_[a, _[b, *c, d]]) do # Same as `Array.(a, Array.(b, *c, d))'
      p [a, b, c, d] #=> [0, 1, [2, 3], 4]
-   }
- }
+   end
+ end
 
  ## (B)
  # From util.match in Gauche: http://practical-scheme.net/gauche/man/?l=en&p=util.match
- match([[0, 1], [2, 3]]) {
-   with(_[_[a, b], ___]) {
+ match([[0, 1], [2, 3]]) do
+   with(_[_[a, b], ___]) do
      p [a, b] #=> [[0, 2], [1, 3]]
-   }
- }
+   end
+ end
 
- match([[0, :a], [1]]) {
-   with(_[_[a & Fixnum, ___, *b], ___]) {
+ match([[0, :a], [1]]) do
+   with(_[_[a & Fixnum, ___, *b], ___]) do
      p [a, b] #=> [[[0], [1]], [[:a], []]]
-   }
- }
+   end
+ end
 
- match([0, 1, 2, 3, 4]) {
-   with(_[*_, a & Fixnum, ___, *_], guard { a.inject(:*) == 6 }) {
+ match([0, 1, 2, 3, 4]) do
+   with(_[*_, a & Fixnum, ___, *_], guard { a.inject(:*) == 6 }) do
      p a #=> [2, 3]
-   }
- }
+   end
+ end
 
  ## (C)
  # balance in a red-black tree
@@ -55,14 +55,14 @@ or
  class B < Node; end
 
  def balance(left, key, right)
-   match([left, key, right]) {
+   match([left, key, right]) do
      with(_[R.(a, x, b), y, R.(c, z, d)]) { R[B[a, x, b], y, B[c, z, d]] }
      with(_[R.(R.(a, x, b), y, c), z, d]) { R[B[a, x, b], y, B[c, z, d]] }
      with(_[R.(a, x, R.(b, y, c)), z, d]) { R[B[a, x, b], y, B[c, z, d]] }
      with(_[a, x, R.(b, y, R.(c, z, d))]) { R[B[a, x, b], y, B[c, z, d]] }
      with(_[a, x, R.(R.(b, y, c), z, d)]) { R[B[a, x, b], y, B[c, z, d]] }
      with(_) { B[left, key, right] }
-   }
+   end
  end
 
  ## (D)
@@ -72,18 +72,18 @@ or
    end
  end
 
- match(['foo-bar@example.com', 'baz-bar@example.com']) {
-   with(_[mail & EMail.(name & /(\w+)-(\w+)/.(firstname, 'bar'), domain), ___]) {
+ match(['foo-bar@example.com', 'baz-bar@example.com']) do
+   with(_[mail & EMail.(name & /(\w+)-(\w+)/.(firstname, 'bar'), domain), ___]) do
      p [firstname, name, domain, mail] # => [["foo", "baz"], ["foo-bar", "baz-bar"], ["example.com", "example.com"], ["foo-bar@example.com", "baz-bar@example.com"]]
-   }
- }
+   end
+ end
 
  ## (E)
- match({a: 0, b: 1, c: 2}) {
-   with(Hash.(:a, :b, c: 2)) {
+ match({a: 0, b: 1, c: 2}) do
+   with(Hash.(:a, :b, c: 2)) do
      p [a, b] #=> [0, 1]
-   }
- }
+   end
+ end
 
 You can see another example in test/test_pattern-match.rb.
 
