@@ -211,6 +211,10 @@ module PatternMatch
     def longest?
       @longest
     end
+
+    def inspect
+      "#<#{self.class.name}: min_k=#{@min_k}, longest=#{@longest}>"
+    end
   end
 
   class PatternElement < Pattern
@@ -236,6 +240,10 @@ module PatternMatch
         end
         @subpatterns[0].match(deconstructed_vals)
       end
+    end
+
+    def inspect
+      "#<#{self.class.name}: deconstructor=#{@deconstructor.inspect}, subpatterns=#{@subpatterns.inspect}>"
     end
 
     private
@@ -267,6 +275,10 @@ module PatternMatch
           pat.match([val.__send__(@getter, k)]) rescue false
         end
       end
+    end
+
+    def inspect
+      "#<#{self.class.name}: klass=#{@klass.inspect}, spec=#{@spec.inspect}>"
     end
 
     private
@@ -336,6 +348,10 @@ module PatternMatch
       end
     end
 
+    def inspect
+      "#<#{self.class.name}: name=#{name.inspect}, val=#{@val.inspect}>"
+    end
+
     private
 
     def bind(val)
@@ -364,6 +380,10 @@ module PatternMatch
         @val.__send__(@compare_by, val)
       end
     end
+
+    def inspect
+      "#<#{self.class.name}: val=#{@val.inspect}>"
+    end
   end
 
   class PatternAnd < PatternElement
@@ -371,6 +391,10 @@ module PatternMatch
       super do |val|
         @subpatterns.all? {|i| i.match([val]) }
       end
+    end
+
+    def inspect
+      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
     end
   end
 
@@ -391,6 +415,10 @@ module PatternMatch
       super
       raise MalformedPatternError unless vars.length == 0
     end
+
+    def inspect
+      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
+    end
   end
 
   class PatternNot < PatternElement
@@ -407,6 +435,10 @@ module PatternMatch
     def validate
       super
       raise MalformedPatternError unless vars.length == 0
+    end
+
+    def inspect
+      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
     end
   end
 
@@ -428,6 +460,10 @@ module PatternMatch
         raise MalformedPatternError if pat.next
         pat = pat.parent
       end
+    end
+
+    def inspect
+      "#<#{self.class.name}: guard_proc=#{@guard_proc.inspect}>"
     end
   end
 
