@@ -482,7 +482,7 @@ module PatternMatch
           pat.vars.each_with_object({}) do |v, h|
             if h.has_key?(v.name)
               unless h[v.name] == v.val
-                ::Kernel.raise ::PatternMatch::PatternNotMatch
+                ::Kernel.raise PatternNotMatch
               end
             else
               h[v.name] = v.val
