@@ -31,12 +31,6 @@ class TestPatternMatch < Test::Unit::TestCase
       with(i, guard { i.even? }) { pass }
       with(_) { flunk }
     end
-
-    assert_raise(PatternMatch::MalformedPatternError) do
-      match(0) do
-        with(_[a, a]) {}
-      end
-    end
   end
 
   def test_variable_shadowing
@@ -270,6 +264,24 @@ class TestPatternMatch < Test::Unit::TestCase
         assert_equal([0, 1], a)
         assert_equal([2, 4], b)
         assert_equal([5], c)
+      end
+      with(_) { flunk }
+    end
+
+    match([0, 1, 1, 2, 3, 3, 4]) do
+      with(_[*a, b, b, *c]) do
+        assert_equal([0, 1, 1, 2], a)
+        assert_equal(3, b)
+        assert_equal([4], c)
+      end
+      with(_) { flunk }
+    end
+
+    match([0, 1, 1, 2, 3, 3, 4]) do
+      with(_[*a, b, b, *c], guard { b < 3 }) do
+        assert_equal([0], a)
+        assert_equal(1, b)
+        assert_equal([2, 3, 3, 4], c)
       end
       with(_) { flunk }
     end

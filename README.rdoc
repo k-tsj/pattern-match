@@ -29,7 +29,7 @@ or
  end
 
  ## (B)
- # From util.match in Gauche: http://practical-scheme.net/gauche/man/?l=en&p=util.match
+ # quantifer: ___, ___?, __n, __n?
  match([[0, 1], [2, 3]]) do
    with(_[_[a, b], ___]) do
      p [a, b] #=> [[0, 2], [1, 3]]
@@ -45,6 +45,12 @@ or
  match([0, 1, 2, 3, 4]) do
    with(_[*_, a & Fixnum, ___, *_], guard { a.inject(:*) == 6 }) do
      p a #=> [2, 3]
+   end
+ end
+
+ match([0, 1, 1, 2]) do
+   with(_[*_, a, a, *_]) do
+     p a #=> 1
    end
  end
 
