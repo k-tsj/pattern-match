@@ -508,12 +508,16 @@ module PatternMatch
       block
     end
 
+    def ___
+      PatternQuantifier.new(0, true)
+    end
+
+    def ___?
+      PatternQuantifier.new(0, false)
+    end
+
     def method_missing(name, *)
       case name.to_s
-      when '___'
-        PatternQuantifier.new(0, true)
-      when '___?'
-        PatternQuantifier.new(0, false)
       when /\A__(\d+)(\??)\z/
         PatternQuantifier.new($1.to_i, ! $2.empty?)
       else
