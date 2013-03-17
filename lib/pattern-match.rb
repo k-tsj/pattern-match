@@ -155,15 +155,14 @@ module PatternMatch
       quantifier = @next
       lp = longest_patterns(vals)
       (longest ? lp : lp.reverse).each do |(vs, rest)|
+        vars.each {|i| i.set_bind_to(quantifier) }
         begin
-          vars.each {|i| i.set_bind_to(quantifier) }
           if yield vs, rest
             return true
           end
-          vars.each {|i| i.unset_bind_to(quantifier) }
         rescue PatternNotMatch
-          vars.each {|i| i.unset_bind_to(quantifier) }
         end
+        vars.each {|i| i.unset_bind_to(quantifier) }
       end
       false
     end
