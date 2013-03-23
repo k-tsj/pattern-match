@@ -356,6 +356,7 @@ module PatternMatch
     end
 
     def nest_level(quantifier)
+      raise PatternMatchError unless quantifier.kind_of?(PatternQuantifier)
       qs = ancestors.map {|i| (i.next and i.next.quantifier?) ? i.next : nil }.find_all {|i| i }.reverse
       qs.index(quantifier) || (raise PatternMatchError)
     end
