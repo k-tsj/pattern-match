@@ -120,12 +120,12 @@ all objects bound to variable must be equal.
  end
 
 === Quantifier
-<code>___</code>(triple underscore), <code>___?</code>,
-<code>__n</code>(double underscore + n where n >= 0), <code>__n?</code> are quantifier patterns.
+<code>\___</code>, <code>\___?</code>,
+<code>__n</code>(where n >= 0), <code>__n?</code> are quantifier patterns.
 
 They are equivalent to <code>*</code>, <code>*?</code>,
 <code>{n,}</code>, <code>{n,}?</code> in regular expression.
-You can write as <code>*pattern</code> instead of <code>pattern, ___</code>.
+You can write as <code>*pattern</code> instead of <code>pattern, \___</code>.
 
  match([:a, 0, :b, :c]) do
    with(_[a & Symbol, ___, b & Fixnum, c & Symbol, ___]) do
