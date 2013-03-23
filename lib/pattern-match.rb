@@ -186,7 +186,18 @@ module PatternMatch
     def validate
       super
       raise MalformedPatternError unless @prev and ! @prev.quantifier?
-      raise MalformedPatternError unless @parent.kind_of?(PatternDeconstructor)
+      seqs = ancestors.grep(PatternSequence).reverse
+      if seqs.any? {|i| i.next and i.next.quantifier? and not i.vars.empty? }
+        raise NotImplementedError
+      end
+      case @parent
+      when PatternObjectDeconstructor
+        # do nothing
+      when PatternSequence
+        # do nothing
+      else
+        raise MalformedPatternError
+      end
     end
 
     def quantifier?
@@ -380,6 +391,111 @@ module PatternMatch
     end
   end
 
+  class PatternSequence < PatternElement
+    class PatternRewind < PatternElement
+      attr_reader :ntimes
+
+      def initialize(ntimes, head_pattern, next_pattern)
+        super()
+        @ntimes = ntimes
+        @head = head_pattern
+        @next = next_pattern
+      end
+
+      def match(vals)
+        if @ntimes > 0
+          @ntimes -= 1
+          @head.match(vals)
+        else
+          @next ? @next.match(vals) : vals.empty?
+        end
+      end
+
+      def inspect
+        "#<#{self.class.name}: ntimes=#{@ntimes} head=#{@head.inspect} next=#{@next.inspect}>"
+      end
+    end
+
+    def match(vals)
+      if @next && @next.quantifier?
+        repeating_match(vals, @next.longest?) do |rewind|
+          if rewind.ntimes < @next.min_k
+            next false
+          end
+          rewind.match(vals)
+        end
+      else
+        with_rewind(make_rewind(1)) do |rewind|
+          rewind.match(vals)
+        end
+      end
+    end
+
+    def validate
+      super
+      if @subpatterns.empty?
+        raise MalformedPatternError
+      end
+      case @parent
+      when PatternObjectDeconstructor
+        # do nothing
+      when PatternSequence
+        # do nothing
+      else
+        raise MalformedPatternError
+      end
+    end
+
+    def inspect
+      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
+    end
+
+    private
+
+    def make_rewind(n)
+      PatternRewind.new(n, @subpatterns[0], (@next and @next.quantifier?) ? @next.next : @next)
+    end
+
+    def repeating_match(vals, longest)
+      quantifier = @next
+      lp = longest_patterns(vals)
+      (longest ? lp : lp.reverse).each do |rewind|
+        vars.each {|i| i.set_bind_to(quantifier) }
+        begin
+          with_rewind(rewind) do |rewind|
+            if yield rewind
+              return true
+            end
+          end
+        rescue PatternNotMatch
+        end
+        vars.each {|i| i.unset_bind_to(quantifier) }
+      end
+      false
+    end
+
+    def longest_patterns(vals)
+      vals.length.downto(0).map do |n|
+        make_rewind(n)
+      end
+    end
+
+    def with_rewind(rewind)
+      @subpatterns[-1].next = rewind
+      yield rewind
+    ensure
+      @subpatterns[-1].next = nil
+    end
+
+    def set_subpatterns_relation
+      super
+      @subpatterns.each_cons(2) do |a, b|
+        a.next = b
+        b.prev = a
+      end
+    end
+  end
+
   class PatternAnd < PatternElement
     def match(vals)
       super do |val|
@@ -556,6 +672,10 @@ module PatternMatch
 
     alias __ _
     alias _l _
+
+    def Seq(*subpatterns)
+      PatternSequence.new(*subpatterns)
+    end
 
     class TmpBindingModule < ::Module
     end

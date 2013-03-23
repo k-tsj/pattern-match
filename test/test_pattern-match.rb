@@ -287,6 +287,107 @@ class TestPatternMatch < Test::Unit::TestCase
     end
   end
 
+  def test_sequence
+    match([0, 1]) do
+      with(_[Seq(a)]) { flunk }
+      with(_[Seq(a, b)]) do
+        assert_equal(0, a)
+        assert_equal(1, b)
+      end
+      with(_) { flunk }
+    end
+
+    match([0, 1]) do
+      with(_[Seq(a), Seq(b)]) do
+        assert_equal(0, a)
+        assert_equal(1, b)
+      end
+      with(_) { flunk }
+    end
+
+    match([0, :a, 1, 2, :b, 3]) do
+      with(_[Seq(a & Fixnum, b & Symbol, c & Fixnum), ___]) do
+        assert_equal([0, 2], a)
+        assert_equal([:a, :b], b)
+        assert_equal([1, 3], c)
+      end
+      with(_) { flunk }
+    end
+
+    match([0, :a, 1, 2, :b, :c]) do
+      with(_[Seq(a & Fixnum, b & Symbol, c & Fixnum), ___]) { flunk }
+      with(_) { pass }
+    end
+
+    match([0, 1, :a, 2, 3, :b, 4, 5]) do
+      with(_[a, Seq(b & Fixnum, c & Symbol, d & Fixnum), ___, e]) do
+        assert_equal(0, a)
+        assert_equal([1, 3], b)
+        assert_equal([:a, :b], c)
+        assert_equal([2, 4], d)
+        assert_equal(5, e)
+      end
+      with(_) { flunk }
+    end
+
+    match([:a, [[0, 1], [2, 3], [4, 5]], :b]) do
+      with(_[a, _[_[Seq(b), ___], ___], ___, c]) do
+        assert_equal(:a, a)
+        assert_equal([[[0, 1], [2, 3], [4, 5]]], b)
+        assert_equal(:b, c)
+      end
+      with(_) { flunk }
+    end
+
+    match([0]) do
+      with(_[Seq(a), ___, *b]) do
+        assert_equal([0], a)
+        assert_equal([], b)
+      end
+      with(_) { flunk }
+    end
+
+    match([0]) do
+      with(_[Seq(a), ___?, *b]) do
+        assert_equal([], a)
+        assert_equal([0], b)
+      end
+      with(_) { flunk }
+    end
+
+    match([0]) do
+      with(_[Seq(a), ___, Seq(b), __1]) do
+        assert_equal([], a)
+        assert_equal([0], b)
+      end
+      with(_) { flunk }
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(0) do
+        with(Seq()) {}
+      end
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(0) do
+        with(_[Seq()]) {}
+      end
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match([0]) do
+        with(_[a & Seq(0)]) {}
+      end
+    end
+
+    assert_raise(NotImplementedError) do
+      match([0]) do
+        with(_[Seq(a & Fixnum, ___), ___]) {}
+      end
+    end
+  end
+
   def test_and_or_not
     match(1) do
       with(_(0) & _(1)) { flunk }
