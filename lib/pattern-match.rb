@@ -495,6 +495,11 @@ module PatternMatch
       end
     end
 
+    def validate
+      super
+      raise MalformedPatternError if @subpatterns.empty?
+    end
+
     def inspect
       "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
     end
@@ -515,6 +520,7 @@ module PatternMatch
 
     def validate
       super
+      raise MalformedPatternError if @subpatterns.empty?
       raise MalformedPatternError unless vars.empty?
     end
 
@@ -536,6 +542,7 @@ module PatternMatch
 
     def validate
       super
+      raise MalformedPatternError unless @subpatterns.length == 1
       raise MalformedPatternError unless vars.empty?
     end
 
@@ -662,6 +669,19 @@ module PatternMatch
     def Seq(*subpatterns)
       PatternSequence.new(*subpatterns)
     end
+
+    def And(*subpatterns)
+      PatternAnd.new(*subpatterns)
+    end
+
+    def Or(*subpatterns)
+      PatternOr.new(*subpatterns)
+    end
+
+    def Not(*subpatterns)
+      PatternNot.new(*subpatterns)
+    end
+
 
     class TmpBindingModule < ::Module
     end

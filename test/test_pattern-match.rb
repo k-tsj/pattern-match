@@ -457,6 +457,45 @@ class TestPatternMatch < Test::Unit::TestCase
         with(a & ___) {}
       end
     end
+
+    match(1) do
+      with(And(0, 1)) { flunk }
+      with(_) { pass }
+    end
+
+    match(1) do
+      with(Or(0, 1)) { pass }
+      with(_) { flunk }
+    end
+
+    match(1) do
+      with(Not(0)) { pass }
+      with(_) { flunk }
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(1) do
+        with(And()) {}
+      end
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(1) do
+        with(Or()) {}
+      end
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(1) do
+        with(Not()) {}
+      end
+    end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(1) do
+        with(Not(0, 1)) {}
+      end
+    end
   end
 
   def test_match_without_argument
