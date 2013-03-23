@@ -85,7 +85,7 @@ module PatternMatch
     end
 
     def quantified?
-      (@next && @next.quantifier?) || (root? ? false : @parent.quantified?)
+      (@next and @next.quantifier?) || (root? ? false : @parent.quantified?)
     end
 
     def root
@@ -101,7 +101,7 @@ module PatternMatch
     end
 
     def match(vals)
-      if @next && @next.quantifier?
+      if @next and @next.quantifier?
         q = @next
         repeating_match(vals, q.longest?) do |vs, rest|
           if vs.length < q.min_k
@@ -114,15 +114,7 @@ module PatternMatch
           return false
         end
         val, *rest = vals
-        if yield(val)
-          if @next
-            @next.match(rest)
-          else
-            rest.empty?
-          end
-        else
-          false
-        end
+        yield(val) and (@next ? @next.match(rest) : rest.empty?)
       end
     end
 
@@ -417,7 +409,7 @@ module PatternMatch
     end
 
     def match(vals)
-      if @next && @next.quantifier?
+      if @next and @next.quantifier?
         repeating_match(vals, @next.longest?) do |rewind|
           if rewind.ntimes < @next.min_k
             next false
@@ -523,7 +515,7 @@ module PatternMatch
 
     def validate
       super
-      raise MalformedPatternError unless vars.length == 0
+      raise MalformedPatternError unless vars.empty?
     end
 
     def inspect
@@ -544,7 +536,7 @@ module PatternMatch
 
     def validate
       super
-      raise MalformedPatternError unless vars.length == 0
+      raise MalformedPatternError unless vars.empty?
     end
 
     def inspect
@@ -569,13 +561,7 @@ module PatternMatch
 
     def validate
       super
-      pat = self
-      until pat.root?
-        if pat.next and ! pat.next.kind_of?(PatternGuard)
-          raise MalformedPatternError
-        end
-        pat = pat.parent
-      end
+      raise MalformedPatternError if ancestors.find {|i| i.next and ! i.next.kind_of?(PatternCondition) }
     end
 
     def inspect
