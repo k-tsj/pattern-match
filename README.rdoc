@@ -18,44 +18,154 @@ or
  $ echo "gem 'pattern-match', :git => 'git://github.com/k-tsj/pattern-match.git'" > Gemfile
  $ bundle install --path vendor/bundle
 
-== Example
+== Basic Usage
+pattern-match library provides Kernel#match.
+
  require 'pattern-match'
 
- ## (A)
- match([0, [1, 2, 3, 4]]) do
-   with(_[a, _[b, *c, d]]) do # Same as `Array.(a, Array.(b, *c, d))'
-     p [a, b, c, d] #=> [0, 1, [2, 3], 4]
+ match(object) do
+   with(pattern[, guard]) do
+     ...
+   end
+   with(pattern[, guard]) do
+     ...
+   end
+   ...
+ end
+
+The patterns are run in sequence until the first one that matches.
+
+If a pattern matches, a block passed to <code>with</code> is called and return its result.
+If no pattern matches, a PatternMatch::NoMatchingPatternError exception is raised.
+
+You can specify pattern guard if you want.
+
+== Patterns
+=== Value
+An object (expect the instance of PatternMatch::Pattern) is a value pattern.
+
+The pattern matches an object such that <code>pattern === object</code>.
+
+ match(0) do
+   with(Fixnum) { :match } #=> :match
+ end
+
+If you want to use an another method of matching,
+you have to use <code>_</code> as follows.
+
+ match(0) do
+   with(_(Fixnum, :==)) { :match }
+ end #=> NoMatchingPatternError
+
+=== Deconstructor
+A deconstructor pattern is (typically) of the form <code>deconstructor.([pattern, ...])</code>.
+
+It is equivalent to Extractor in Scala.
+
+Consider the following example:
+
+ match([0, 1]) do
+   with(Array.(0, 1)) { :match } #=> :match
+ end
+
+ match('ab') do
+   with(/(.)(.)/.('a', 'b')) { :match } #=> :match
+ end
+
+Array, Regexp object(<code>/(.)(.)/</code>) are deconstructors.
+You can use any object has the following features as deconstructor.
+
+* PatternMatch::Deconstructable is included in a class of deconstructor
+* Can be responded to <code>deconstruct</code> method
+
+Note that <code>_[]</code> is provided as syntactic sugar for <code>Array.()</code>.
+
+ match([0, 1]) do
+   with(_[0, 1]) { :match } #=> :match
+ end
+
+=== Variable
+An identifier is a variable pattern.
+
+It matches any value, and binds the variable name to that value.
+A special case is the wild-card pattern <code>_</code> which matches any value,
+and never binds.
+
+ match([0, 1]) do
+   with(_[a, b]) { [a, b] } #=> [0, 1]
+ end
+
+ match(0) do
+   with(_) { _ } #=> NameError
+ end
+
+When several patterns with the same name occur in a single pattern,
+all objects bound to variable must be equal.
+
+ match([0, 1]) do
+   with(_[a, a]) { a }
+ end #=> NoMatchingPatternError
+
+=== And/Or/Not
+<code>PatternMatch::Pattern#&</code>, <code>PatternMatch::Pattern#|</code>, <code>PatternMatch::Pattern#!@</code>,
+<code>And</code>, <code>Or</code>, <code>Not</code> return and/or/not pattern.
+
+ match([0, [1]]) do
+   with(a & Finuxm, ! (_[2] | _[3])) { a } #=> 0
+ end
+
+ match(0) do
+   with(0 | 1 | 2) { } # (0 | 1 | 2) is evaluated to 3, so the pattern does not match.
+   with(Or(0, 1, 2)) { :match } #=> :match
+ end
+
+=== Quantifier
+<code>___</code>, <code>___?</code>, <code>__n</code>, <code>__n?</code> are quantifier patterns.
+
+They are equivalent to <code>*</code>, <code>*?</code>,
+<code>{n,}</code>, <code>{n,}?</code> in regular expression.
+You can write as <code>*pattern</code> instead of <code>pattern, ___</code>.
+
+ match([:a, 0, :b, :c]) do
+   with(_[a & Symbol, ___, b & Fixnum, c & Symbol, ___]) do
+     a #=> [:a]
+     b #=> 0
+     c #=> [:b, :c]
    end
  end
 
- ## (B)
- # quantifier: ___, ___?, __n, __n?
- match([[0, 1], [2, 3]]) do
-   with(_[_[a, b], ___]) do
-     p [a, b] #=> [[0, 2], [1, 3]]
+=== Sequence
+<code>Seq</code> returns a sequence pattern.
+
+It is equivalent to <code>()</code> in regular expression.
+
+ match([:a, 0, :b, 1]) do
+   with(_[Seq(a & Symbol, b & Fixnum), ___]) do
+     a #=> [:a, :b]
+     b #=> [0, 1]
    end
  end
 
- match([[0, :a], [1]]) do
-   with(_[_[a & Fixnum, ___, *b], ___]) do
-     p [a, b] #=> [[[0], [1]], [[:a], []]]
+=== EXPERIMENTAL
+* Object.()
+* Matcher
+  * KeyMatcher
+    * Hash.()
+  * AttributeMatcher
+
+See source code for more details.
+
+== Pattern guard
+Pattern guard can be specified as a second argument to <code>with</code>.
+
+ match([1, 2, 3, 4, 5]) do
+   with(_[*_, *a, *_], guard { a.inject(:*) == 12 }) do
+     a #=> [3, 4]
    end
  end
 
- match([0, 1, 2, 3, 4]) do
-   with(_[*_, a & Fixnum, ___, *_], guard { a.inject(:*) == 6 }) do
-     p a #=> [2, 3]
-   end
- end
-
- match([0, 1, 1, 2]) do
-   with(_[*_, a, a, *_]) do
-     p a #=> 1
-   end
- end
-
- ## (C)
- # balance in a red-black tree
+== Examples
+ # (A)
  Node = Struct.new(:left, :key, :right)
  class R < Node; end
  class B < Node; end
@@ -71,27 +181,58 @@ or
    end
  end
 
- ## (D)
+ # (B)
  class EMail
    def self.deconstruct(value)
-     value.to_s.split(/@/).tap {|parts| raise PatternNotMatch unless parts.length == 2 }
+     parts = value.to_s.split(/@/)
+     if parts.length == 2
+       parts
+     else
+       raise PatternMatch::PatternNotMatch
+     end
    end
  end
 
  match(['foo-bar@example.com', 'baz-bar@example.com']) do
    with(_[mail & EMail.(name & /(\w+)-(\w+)/.(firstname, 'bar'), domain), ___]) do
-     p [firstname, name, domain, mail] # => [["foo", "baz"], ["foo-bar", "baz-bar"], ["example.com", "example.com"], ["foo-bar@example.com", "baz-bar@example.com"]]
+     mail      #=> ["foo-bar@example.com", "baz-bar@example.com"]
+     name      #=> ["foo-bar", "baz-bar"]
+     firstname #=> ["foo", "baz"]
+     domain    #=> ["example.com", "example.com"]
    end
  end
 
- ## (E)
- match({a: 0, b: 1, c: 2}) do
-   with(Hash.(:a, :b, c: 2)) do
-     p [a, b] #=> [0, 1]
+ # (C)
+ def replace_repeated(obj, &block)
+   ret = match(obj, &block)
+   if ret == obj
+     ret
+   else
+     replace_repeated(ret, &block)
+   end
+ rescue PatternMatch::NoMatchingPatternError
+   obj
+ end
+
+ replace_repeated([1, 2, 4, 4, 3, 3, 4, 0, 0]) do
+   with(_[*a, x, x, *b]) { [*a, x, *b] }
+ end #=> [1, 2, 4, 3, 4, 0]
+
+ # (D)
+ match({a: 0, b: 1}) do
+   with(Hash.(:a, b: Object.(:odd? => true))) do
+     a #=> 0
    end
  end
 
-You can see another example in test/test_pattern-match.rb.
+ C = Struct.new(:a, :b) do
+   include PatternMatch::AttributeMatcher
+ end
+ match(C[0, 1]) do
+   with(C.(:b, a: 0)) do
+     b # => 1
+   end
+ end
 
 == Reference
 * {Pattern Matching in Ruby (at Sapporo RubyKaigi 2012) // Speaker Deck}[https://speakerdeck.com/k_tsj/patternmatchinginruby]
@@ -101,7 +242,7 @@ You can see another example in test/test_pattern-match.rb.
  $ cd pattern-match
  $ gem install bundler (if you need)
  $ bundle install --path vendor/bundle
- $ rake test (or simply type "rake")
- $ rake build
+ $ bundle exec rake test (or "bundle exec rake")
+ $ bundle exec rake build
 
 == Travis Build Status {<img src="https://secure.travis-ci.org/k-tsj/pattern-match.png"/>}[http://travis-ci.org/k-tsj/pattern-match]
