@@ -111,7 +111,7 @@ all objects bound to variable must be equal.
 <code>And</code>, <code>Or</code>, <code>Not</code> return and/or/not pattern.
 
  match([0, [1]]) do
-   with(a & Finuxm, ! (_[2] | _[3])) { a } #=> 0
+   with(a & Fixnum, ! (_[2] | _[3])) { a } #=> 0
  end
 
  match(0) do
