@@ -682,7 +682,6 @@ module PatternMatch
       PatternNot.new(*subpatterns)
     end
 
-
     class TmpBindingModule < ::Module
     end
 
@@ -754,7 +753,7 @@ module Kernel
       env = PatternMatch.const_get(:Env).new(self, val)
       catch(:exit_match) do
         env.instance_eval(&block)
-        raise ::PatternMatch::NoMatchingPatternError
+        raise PatternMatch::NoMatchingPatternError
       end
     end
     case vals.length
