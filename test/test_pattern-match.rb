@@ -31,6 +31,12 @@ class TestPatternMatch < Test::Unit::TestCase
       with(i, guard { i.even? }) { pass }
       with(_) { flunk }
     end
+
+    assert_raise(ArgumentError) do
+      match(0) do
+        p 1
+      end
+    end
   end
 
   def test_variable_shadowing

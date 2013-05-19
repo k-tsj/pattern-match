@@ -614,7 +614,8 @@ module PatternMatch
       PatternQuantifier.new(0, false)
     end
 
-    def method_missing(name, *)
+    def method_missing(name, *args)
+      ::Kernel.raise ::ArgumentError, "wrong number of arguments (#{args.length} for 0)" unless args.empty?
       case name.to_s
       when /\A__(\d+)(\??)\z/
         PatternQuantifier.new($1.to_i, ! $2.empty?)
