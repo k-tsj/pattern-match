@@ -135,6 +135,10 @@ module PatternMatch
       end
     end
 
+    def inspect
+      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
+    end
+
     private
 
     def repeating_match(vals, longest)
@@ -438,10 +442,6 @@ module PatternMatch
       end
     end
 
-    def inspect
-      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
-    end
-
     private
 
     def make_rewind(n)
@@ -499,10 +499,6 @@ module PatternMatch
       super
       raise MalformedPatternError if @subpatterns.empty?
     end
-
-    def inspect
-      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
-    end
   end
 
   class PatternOr < PatternElement
@@ -523,10 +519,6 @@ module PatternMatch
       raise MalformedPatternError if @subpatterns.empty?
       raise MalformedPatternError unless vars.empty?
     end
-
-    def inspect
-      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
-    end
   end
 
   class PatternNot < PatternElement
@@ -544,10 +536,6 @@ module PatternMatch
       super
       raise MalformedPatternError unless @subpatterns.length == 1
       raise MalformedPatternError unless vars.empty?
-    end
-
-    def inspect
-      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
     end
   end
 
