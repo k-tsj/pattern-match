@@ -41,6 +41,18 @@ module PatternMatch
     end
   end
 
+  module HasOrderedSubPatterns
+    private
+
+    def set_subpatterns_relation
+      super
+      @subpatterns.each_cons(2) do |a, b|
+        a.next = b
+        b.prev = a
+      end
+    end
+  end
+
   class Pattern
     attr_accessor :parent, :next, :prev
 
@@ -182,17 +194,10 @@ module PatternMatch
     def validate
       super
       raise MalformedPatternError unless @prev and ! @prev.quantifier?
+      raise MalformedPatternError unless @parent.kind_of?(HasOrderedSubPatterns)
       seqs = ancestors.grep(PatternSequence).reverse
       if seqs.any? {|i| i.next and i.next.quantifier? and not i.vars.empty? }
         raise NotImplementedError
-      end
-      case @parent
-      when PatternObjectDeconstructor
-        # do nothing
-      when PatternSequence
-        # do nothing
-      else
-        raise MalformedPatternError
       end
     end
 
@@ -227,6 +232,8 @@ module PatternMatch
   end
 
   class PatternObjectDeconstructor < PatternDeconstructor
+    include HasOrderedSubPatterns
+
     def initialize(deconstructor, *subpatterns)
       super(*subpatterns)
       @deconstructor = deconstructor
@@ -244,16 +251,6 @@ module PatternMatch
 
     def inspect
       "#<#{self.class.name}: deconstructor=#{@deconstructor.inspect}, subpatterns=#{@subpatterns.inspect}>"
-    end
-
-    private
-
-    def set_subpatterns_relation
-      super
-      @subpatterns.each_cons(2) do |a, b|
-        a.next = b
-        b.prev = a
-      end
     end
   end
 
@@ -388,6 +385,8 @@ module PatternMatch
   end
 
   class PatternSequence < PatternElement
+    include HasOrderedSubPatterns
+
     class PatternRewind < PatternElement
       attr_reader :ntimes
 
@@ -429,17 +428,8 @@ module PatternMatch
 
     def validate
       super
-      if @subpatterns.empty?
-        raise MalformedPatternError
-      end
-      case @parent
-      when PatternObjectDeconstructor
-        # do nothing
-      when PatternSequence
-        # do nothing
-      else
-        raise MalformedPatternError
-      end
+      raise MalformedPatternError if @subpatterns.empty?
+      raise MalformedPatternError unless @parent.kind_of?(HasOrderedSubPatterns)
     end
 
     private
@@ -477,14 +467,6 @@ module PatternMatch
       yield rewind
     ensure
       @subpatterns[-1].next = nil
-    end
-
-    def set_subpatterns_relation
-      super
-      @subpatterns.each_cons(2) do |a, b|
-        a.next = b
-        b.prev = a
-      end
     end
   end
 
