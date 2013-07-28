@@ -97,7 +97,7 @@ module PatternMatch
     end
 
     def quantified?
-      (@next and @next.quantifier?) || (root? ? false : @parent.quantified?)
+      (@next and @next.quantifier?) or (root? ? false : @parent.quantified?)
     end
 
     def root
