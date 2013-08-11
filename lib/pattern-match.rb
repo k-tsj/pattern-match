@@ -557,20 +557,7 @@ module PatternMatch
     def with(pat_or_val, guard_proc = nil, &block)
       ctx = @ctx
       pat = pat_or_val.kind_of?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
-      pat.append(
-        PatternCondition.new do
-          pat.vars.each_with_object({}) do |v, h|
-            if h.has_key?(v.name)
-              unless h[v.name] == v.val
-                ::Kernel.raise PatternNotMatch
-              end
-            else
-              h[v.name] = v.val
-            end
-          end
-          true
-        end
-      )
+      pat.append(PatternCondition.new { check_for_duplicate_vars(pat.vars) })
       if guard_proc
         pat.append(PatternCondition.new { with_tmpbinding(ctx, pat.binding, &guard_proc) })
       end
@@ -653,11 +640,24 @@ module PatternMatch
       PatternNot.new(*subpatterns)
     end
 
+    def check_for_duplicate_vars(vars)
+      vars.each_with_object({}) do |v, h|
+        if h.has_key?(v.name)
+          unless h[v.name] == v.val
+            return false
+          end
+        else
+          h[v.name] = v.val
+        end
+      end
+      true
+    end
+
     class TmpBindingModule < ::Module
     end
 
     def with_tmpbinding(obj, binding, &block)
-      tmpbinding_module(obj).instance_eval do
+      tmpbinding_module(obj).module_eval do
         begin
           binding.each do |name, val|
             stack = @stacks[name]
@@ -682,8 +682,7 @@ module PatternMatch
     def tmpbinding_module(obj)
       m = obj.singleton_class.ancestors.find {|i| i.kind_of?(TmpBindingModule) }
       unless m
-        m = TmpBindingModule.new
-        m.instance_eval do
+        m = TmpBindingModule.new do
           @stacks = ::Hash.new {|h, k| h[k] = [] }
         end
         obj.singleton_class.class_eval do
