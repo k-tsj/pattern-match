@@ -235,6 +235,9 @@ Pattern guard can be specified as a second argument to <code>with</code>.
    end
  end
 
+* {RubyTextProcessing}[https://code.google.com/p/tokland/wiki/RubyTextProcessing]
+* {yhara/tapl-ruby}[https://github.com/yhara/tapl-ruby]
+
 == Reference
 * {Pattern Matching in Ruby (at Sapporo RubyKaigi 2012) // Speaker Deck}[https://speakerdeck.com/k_tsj/patternmatchinginruby]
 
