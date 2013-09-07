@@ -72,7 +72,7 @@ module PatternMatch
       root? ? [self] : parent.ancestors.unshift(self)
     end
 
-    def binding
+    def quasibinding
       vars.each_with_object({}) {|v, h| h[v.name] = v.val }
     end
 
@@ -559,11 +559,11 @@ module PatternMatch
       pat = pat_or_val.kind_of?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
       pat.append(PatternCondition.new { check_for_duplicate_vars(pat.vars) })
       if guard_proc
-        pat.append(PatternCondition.new { with_tmpbinding(ctx, pat.binding, &guard_proc) })
+        pat.append(PatternCondition.new { with_quasibinding(ctx, pat.quasibinding, &guard_proc) })
       end
       pat.validate
       if pat.match([@val])
-        ret = with_tmpbinding(ctx, pat.binding, &block)
+        ret = with_quasibinding(ctx, pat.quasibinding, &block)
         ::Kernel.throw(:exit_match, ret)
       else
         nil
@@ -653,13 +653,13 @@ module PatternMatch
       true
     end
 
-    class TmpBindingModule < ::Module
+    class QuasiBindingModule < ::Module
     end
 
-    def with_tmpbinding(obj, binding, &block)
-      tmpbinding_module(obj).module_eval do
+    def with_quasibinding(obj, quasibinding, &block)
+      quasibinding_module(obj).module_eval do
         begin
-          binding.each do |name, val|
+          quasibinding.each do |name, val|
             stack = @stacks[name]
             if stack.empty?
               define_method(name) { stack[-1] }
@@ -669,7 +669,7 @@ module PatternMatch
           end
           obj.instance_eval(&block)
         ensure
-          binding.each do |name, _|
+          quasibinding.each do |name, _|
             @stacks[name].pop
             if @stacks[name].empty?
               remove_method(name)
@@ -679,10 +679,10 @@ module PatternMatch
       end
     end
 
-    def tmpbinding_module(obj)
-      m = obj.singleton_class.ancestors.find {|i| i.kind_of?(TmpBindingModule) }
+    def quasibinding_module(obj)
+      m = obj.singleton_class.ancestors.find {|i| i.kind_of?(QuasiBindingModule) }
       unless m
-        m = TmpBindingModule.new do
+        m = QuasiBindingModule.new do
           @stacks = ::Hash.new {|h, k| h[k] = [] }
         end
         obj.singleton_class.class_eval do
