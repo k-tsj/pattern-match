@@ -98,7 +98,7 @@ class TestPatternMatch < Test::Unit::TestCase
   end
 
   def test_override_singleton_method
-    skip 'Module#prepend not supported' unless Module.private_method_defined?(:prepend)
+    skip 'Module#prepend not supported' unless Module.respond_to?(:prepend, true)
     match(0) do
       with(_test_override_singleton_method) do
         def self._test_override_singleton_method
