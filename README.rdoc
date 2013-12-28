@@ -42,7 +42,7 @@ You can specify pattern guard if you want.
 
 == Patterns
 === Value
-An object (expect the instance of PatternMatch::Pattern) is a value pattern.
+An ordinary object is a value pattern.
 
 The pattern matches an object such that <code>pattern === object</code>.
 
@@ -72,7 +72,7 @@ Consider the following example:
    with(/(.)(.)/.('a', 'b')) { :match } #=> :match
  end
 
-Array, Regexp object(<code>/(.)(.)/</code>) are deconstructors.
+Array class(<code>Array</code>), Regexp object(<code>/(.)(.)/</code>) are deconstructors.
 You can use any object has the following features as deconstructor.
 
 * PatternMatch::Deconstructable is included in a class of deconstructor
@@ -221,7 +221,7 @@ Pattern guard can be specified as a second argument to <code>with</code>.
 
  # (D)
  match({a: 0, b: 1}) do
-   with(Hash.(:a, b: Object.(:odd? => true))) do
+   with(Hash.(:a, b: Object.(odd?: true))) do
      a #=> 0
    end
  end
