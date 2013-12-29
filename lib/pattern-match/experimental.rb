@@ -36,3 +36,11 @@ end
 class Hash
   include PatternMatch::KeyMatcher
 end
+
+class Object
+  def assert_pattern(pattern)
+    match(self) do
+      Kernel.eval("with(#{pattern}) { self }", Kernel.binding)
+    end
+  end
+end

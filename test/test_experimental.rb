@@ -80,4 +80,12 @@ class TestExperimental < Test::Unit::TestCase
       end
     end
   end
+
+  def test_object_assert_pattern
+    assert_equal([0], [0].assert_pattern('_[Fixnum]'))
+    assert_equal([0], [0].assert_pattern('_[a & Fixnum], guard { a.even? }'))
+    assert_raise(PatternMatch::NoMatchingPatternError) do
+      [0, 1].assert_pattern('_[Fixnum]')
+    end
+  end
 end
