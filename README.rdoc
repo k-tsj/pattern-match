@@ -154,6 +154,7 @@ It is equivalent to <code>()</code> in regular expression.
     * Hash.()
   * AttributeMatcher
 
+To use experimental features, you must also require 'pattern-match/experimental'.
 See source code for more details.
 
 == Pattern guard
@@ -220,6 +221,8 @@ Pattern guard can be specified as a second argument to <code>with</code>.
  end #=> [1, 2, 4, 3, 4, 0]
 
  # (D)
+ require 'pattern-match/experimental'
+
  match({a: 0, b: 1}) do
    with(Hash.(:a, b: Object.(odd?: true))) do
      a #=> 0
