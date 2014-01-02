@@ -7,6 +7,7 @@ class TestStandard < Test::Unit::TestCase
     this = self
     ret = match([0, 1, 2, 3]) do
       with(nil) { flunk }
+      with(_[]) { flunk }
       with(_[a, 0, 0, b]) { flunk }
       with(_[a, Fixnum , 2, b]) do
         assert_equal(this, self)
@@ -30,6 +31,11 @@ class TestStandard < Test::Unit::TestCase
     match(0) do
       with(i, guard { i.odd? }) { flunk }
       with(i, guard { i.even? }) { pass }
+      with(_) { flunk }
+    end
+
+    match([]) do
+      with(_[]) { pass }
       with(_) { flunk }
     end
 
@@ -513,6 +519,13 @@ class TestStandard < Test::Unit::TestCase
 
   def test_match_without_argument
     assert_equal(1, 2.times.find(&match { with(1) { true }; with(_) { false } }))
+  end
+
+  def test_match_too_many_arguments
+    assert_raise(ArgumentError) do
+      match(0, 1) do
+      end
+    end
   end
 
   def test_deconstructor_class
