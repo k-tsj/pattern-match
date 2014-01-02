@@ -1,3 +1,3 @@
 module PatternMatch
-  VERSION = "0.5.1dev"
+  VERSION = "0.5.1"
 end
