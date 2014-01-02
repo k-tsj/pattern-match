@@ -416,7 +416,7 @@ module PatternMatch
       (longest ? lp : lp.reverse).each do |rewind|
         vars.each {|i| i.set_bind_to(quantifier) }
         begin
-          with_rewind(rewind) do |rewind|
+          with_rewind(rewind) do
             if yield rewind
               return true
             end
