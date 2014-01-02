@@ -263,7 +263,7 @@ module PatternMatch
              else
                raise MalformedPatternError
              end
-      variables = Hash[syms.map {|i, h| [i, PatternVariable.new(i)] }]
+      variables = Hash[syms.map {|i| [i, PatternVariable.new(i)] }]
       Hash[variables.merge(hash).map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
     end
   end
