@@ -117,6 +117,12 @@ class TestStandard < Test::Unit::TestCase
       end
       with(_) { flunk }
     end
+
+    assert_raise(PatternMatch::MalformedPatternError) do
+      match(0) do
+        with(_(0, :==, nil)) {}
+      end
+    end
   end
 
   def test_splat

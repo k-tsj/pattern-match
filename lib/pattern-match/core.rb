@@ -589,7 +589,7 @@ module PatternMatch
       when 2
         PatternValue.new(vals[0], vals[1])
       else
-        raise MalformedPatternError
+        ::Kernel.raise MalformedPatternError
       end
     end
 
