@@ -1,3 +1,4 @@
+require_relative 'helper'
 require 'test/unit'
 require_relative '../lib/pattern-match'
 require_relative '../lib/pattern-match/experimental'
