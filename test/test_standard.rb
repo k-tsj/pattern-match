@@ -517,7 +517,7 @@ class TestStandard < Test::Unit::TestCase
     end
   end
 
-  def test_match_without_argument
+  def test_match_without_arguments
     assert_equal(1, 2.times.find(&match { with(1) { true }; with(_) { false } }))
   end
 

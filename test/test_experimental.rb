@@ -4,7 +4,7 @@ require_relative '../lib/pattern-match'
 require_relative '../lib/pattern-match/experimental'
 
 class TestExperimental < Test::Unit::TestCase
-  def test_deconstructor_class_attributes_with_hash
+  def test_matcher_attribute_matcher
     person_class = Struct.new(:name, :age) do
       include PatternMatch::AttributeMatcher
     end
@@ -24,7 +24,7 @@ class TestExperimental < Test::Unit::TestCase
     end
   end
 
-  def test_deconstructor_class_hash
+  def test_matcher_class_hash
     match({a: 0, b: 1}) do
       with(Hash.(a: a, b: b, c: c)) { flunk }
       with(Hash.(a: a, b: b)) do
@@ -65,7 +65,7 @@ class TestExperimental < Test::Unit::TestCase
     end
   end
 
-  def test_object
+  def test_matcher_class_object
     match(0) do
       with(Object.(:to_s, :to_i => i & 1)) { flunk }
       with(Object.(:to_s, :to_i => i & 0)) do
