@@ -1,4 +1,5 @@
 require 'pattern-match/version'
+require 'continuation'
 
 module PatternMatch
   module Deconstructable
@@ -27,11 +28,13 @@ module PatternMatch
 
   class Pattern
     attr_accessor :parent, :next, :prev
+    attr_reader :choice_points
 
     def initialize(*subpatterns)
       @parent = nil
       @next = nil
       @prev = nil
+      @choice_points = []
       @subpatterns = subpatterns.map {|i| i.kind_of?(Pattern) ? i : PatternValue.new(i) }
       set_subpatterns_relation
     end
@@ -99,6 +102,10 @@ module PatternMatch
         end
         val, *rest = vals
         yield(val) and (@next ? @next.match(rest) : rest.empty?)
+      end.tap do |matched|
+        if root? and not matched and not choice_points.empty?
+          restore_choice_point
+        end
       end
     end
 
@@ -131,7 +138,9 @@ module PatternMatch
       (longest ? lp : lp.reverse).each do |(vs, rest)|
         vars.each {|i| i.set_bind_to(quantifier) }
         begin
-          if yield vs, rest
+          cont = nil
+          if callcc {|c| cont = c; yield vs, rest }
+            save_choice_point(cont)
             return true
           end
         rescue PatternNotMatch
@@ -145,6 +154,14 @@ module PatternMatch
       vals.length.downto(0).map do |n|
         [vals.take(n), vals.drop(n)]
       end
+    end
+
+    def save_choice_point(choice_point)
+      root.choice_points.push(choice_point)
+    end
+
+    def restore_choice_point
+      root.choice_points.pop.call(false)
     end
 
     def set_subpatterns_relation
