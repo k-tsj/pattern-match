@@ -576,7 +576,7 @@ module PatternMatch
       ::Kernel.raise ::ArgumentError, "wrong number of arguments (#{args.length} for 0)" unless args.empty?
       case name.to_s
       when /\A__(\d+)(\??)\z/
-        PatternQuantifier.new($1.to_i, ! $2.empty?)
+        PatternQuantifier.new($1.to_i, $2.empty?)
       else
         PatternVariable.new(name)
       end

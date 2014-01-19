@@ -320,6 +320,18 @@ class TestStandard < Test::Unit::TestCase
       end
       with(_) { flunk }
     end
+
+    match([0, 1]) do
+      with(_[a, __0, *_]) do
+        assert_equal([0, 1], a)
+      end
+    end
+
+    match([0, 1]) do
+      with(_[a, __0?, *_]) do
+        assert_equal([], a)
+      end
+    end
   end
 
   def test_sequence
