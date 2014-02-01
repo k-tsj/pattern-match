@@ -31,6 +31,48 @@ module PatternMatch
       end
     end
   end
+
+  class PatternKeywordArgStyleDeconstructor < PatternDeconstructor
+    def initialize(klass, checker, getter, *keyarg_subpatterns)
+      spec = normalize_keyword_arg(keyarg_subpatterns)
+      super(*spec.values)
+      @klass = klass
+      @checker = checker
+      @getter = getter
+      @spec = spec
+    end
+
+    def match(vals)
+      super do |val|
+        next false unless val.kind_of?(@klass)
+        next false unless @spec.keys.all? {|k| val.__send__(@checker, k) }
+        @spec.all? do |k, pat|
+          pat.match([val.__send__(@getter, k)]) rescue false
+        end
+      end
+    end
+
+    def inspect
+      "#<#{self.class.name}: klass=#{@klass.inspect}, spec=#{@spec.inspect}>"
+    end
+
+    private
+
+    def normalize_keyword_arg(subpatterns)
+      syms = subpatterns.take_while {|i| i.kind_of?(Symbol) }
+      rest = subpatterns.drop(syms.length)
+      hash = case rest.length
+             when 0
+               {}
+             when 1
+               rest[0]
+             else
+               raise MalformedPatternError
+             end
+      variables = Hash[syms.map {|i| [i, PatternVariable.new(i)] }]
+      Hash[variables.merge(hash).map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
+    end
+  end
 end
 
 class Hash
