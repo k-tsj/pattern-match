@@ -72,7 +72,11 @@ module PatternMatch
     end
 
     def quantified?
-      (@next and @next.quantifier?) or (root? ? false : @parent.quantified?)
+       directly_quantified? or (root? ? false : @parent.quantified?)
+    end
+
+    def directly_quantified?
+      @next and @next.quantifier?
     end
 
     def root
@@ -88,9 +92,9 @@ module PatternMatch
     end
 
     def match(vals)
-      if @next and @next.quantifier?
+      if directly_quantified?
         q = @next
-        repeating_match(vals, q.longest?) do |vs, rest|
+        repeating_match(vals, q.greedy?) do |vs, rest|
           if vs.length < q.min_k
             next false
           end
@@ -132,10 +136,10 @@ module PatternMatch
 
     private
 
-    def repeating_match(vals, longest)
+    def repeating_match(vals, is_greedy)
       quantifier = @next
-      lp = longest_patterns(vals)
-      (longest ? lp : lp.reverse).each do |(vs, rest)|
+      candidates = generate_candidates(vals)
+      (is_greedy ? candidates : candidates.reverse).each do |(vs, rest)|
         vars.each {|i| i.set_bind_to(quantifier) }
         begin
           cont = nil
@@ -150,7 +154,7 @@ module PatternMatch
       false
     end
 
-    def longest_patterns(vals)
+    def generate_candidates(vals)
       vals.length.downto(0).map do |n|
         [vals.take(n), vals.drop(n)]
       end
@@ -174,10 +178,10 @@ module PatternMatch
   class PatternQuantifier < Pattern
     attr_reader :min_k
 
-    def initialize(min_k, longest)
+    def initialize(min_k, is_greedy)
       super()
       @min_k = min_k
-      @longest = longest
+      @is_greedy = is_greedy
     end
 
     def validate
@@ -202,12 +206,12 @@ module PatternMatch
       end
     end
 
-    def longest?
-      @longest
+    def greedy?
+      @is_greedy
     end
 
     def inspect
-      "#<#{self.class.name}: min_k=#{@min_k}, longest=#{@longest}>"
+      "#<#{self.class.name}: min_k=#{@min_k}, is_greedy=#{@is_greedy}>"
     end
   end
 
@@ -401,8 +405,8 @@ module PatternMatch
     end
 
     def match(vals)
-      if @next and @next.quantifier?
-        repeating_match(vals, @next.longest?) do |rewind|
+      if directly_quantified?
+        repeating_match(vals, @next.greedy?) do |rewind|
           if rewind.ntimes < @next.min_k
             next false
           end
@@ -424,13 +428,13 @@ module PatternMatch
     private
 
     def make_rewind(n)
-      PatternRewind.new(n, @subpatterns[0], (@next and @next.quantifier?) ? @next.next : @next)
+      PatternRewind.new(n, @subpatterns[0], directly_quantified? ? @next.next : @next)
     end
 
-    def repeating_match(vals, longest)
+    def repeating_match(vals, is_greedy)
       quantifier = @next
-      lp = longest_patterns(vals)
-      (longest ? lp : lp.reverse).each do |rewind|
+      candidates = generate_candidates(vals)
+      (is_greedy ? candidates : candidates.reverse).each do |rewind|
         vars.each {|i| i.set_bind_to(quantifier) }
         begin
           with_rewind(rewind) do
@@ -445,7 +449,7 @@ module PatternMatch
       false
     end
 
-    def longest_patterns(vals)
+    def generate_candidates(vals)
       vals.length.downto(0).map do |n|
         make_rewind(n)
       end
