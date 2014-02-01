@@ -1,5 +1,7 @@
 require 'pattern-match/core'
 
+raise LoadError, 'Module#prepend required' unless Module.respond_to?(:prepend, true)
+
 module PatternMatch
   module Deconstructable
     remove_method :call
@@ -72,6 +74,21 @@ module PatternMatch
       variables = Hash[syms.map {|i| [i, PatternVariable.new(i)] }]
       Hash[variables.merge(hash).map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
     end
+  end
+
+  class PatternVariable
+    def <<(converter)
+      @converter = converter.respond_to?(:call) ? converter : converter.to_proc
+      self
+    end
+
+    prepend Module.new {
+      private
+
+      def bind(val)
+        super(@converter ? @converter.call(val) : val)
+      end
+    }
   end
 end
 

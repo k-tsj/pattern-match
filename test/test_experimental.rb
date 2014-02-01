@@ -1,7 +1,10 @@
 require_relative 'helper'
 require 'test/unit'
 require_relative '../lib/pattern-match'
-require_relative '../lib/pattern-match/experimental'
+begin
+  require_relative '../lib/pattern-match/experimental'
+rescue LoadError
+end
 
 class TestExperimental < Test::Unit::TestCase
   def test_matcher_attribute_matcher
@@ -89,4 +92,14 @@ class TestExperimental < Test::Unit::TestCase
       [0, 1].assert_pattern('_[Fixnum]')
     end
   end
-end
+
+  def test_pattern_variable_converter
+    match([0, 1]) do
+      with(_[a << :to_s, b << ->(i){ i.to_s }]) do
+        assert_equal('0', a)
+        assert_equal('1', b)
+      end
+      with(_) { flunk }
+    end
+  end
+end if defined? PatternMatch::AttributeMatcher
