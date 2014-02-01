@@ -21,7 +21,7 @@ module PatternMatch
 
     def set_subpatterns_relation
       super
-      @subpatterns.each_cons(2) do |a, b|
+      subpatterns.each_cons(2) do |a, b|
         a.next = b
         b.prev = a
       end
@@ -42,7 +42,7 @@ module PatternMatch
     end
 
     def vars
-      @subpatterns.map(&:vars).flatten
+      subpatterns.map(&:vars).flatten
     end
 
     def ancestors
@@ -90,7 +90,7 @@ module PatternMatch
     end
 
     def validate
-      @subpatterns.each(&:validate)
+      subpatterns.each(&:validate)
     end
 
     def match(vals)
@@ -119,7 +119,7 @@ module PatternMatch
       if @next
         @next.append(pattern)
       else
-        if @subpatterns.empty?
+        if subpatterns.empty?
           if root?
             new_root = PatternAnd.new(self)
             self.parent = new_root
@@ -127,16 +127,18 @@ module PatternMatch
           pattern.parent = @parent
           @next = pattern
         else
-          @subpatterns[-1].append(pattern)
+          subpatterns[-1].append(pattern)
         end
       end
     end
 
     def inspect
-      "#<#{self.class.name}: subpatterns=#{@subpatterns.inspect}>"
+      "#<#{self.class.name}: subpatterns=#{subpatterns.inspect}>"
     end
 
     private
+
+    attr_reader :subpatterns
 
     def repeating_match(vals, is_greedy)
       quantifier = @next
@@ -171,7 +173,7 @@ module PatternMatch
     end
 
     def set_subpatterns_relation
-      @subpatterns.each do |i|
+      subpatterns.each do |i|
         i.parent = self
       end
     end
@@ -237,15 +239,15 @@ module PatternMatch
     def match(vals)
       super do |val|
         deconstructed_vals = @deconstructor.deconstruct(val)
-        if @subpatterns.empty?
+        if subpatterns.empty?
           next deconstructed_vals.empty?
         end
-        @subpatterns[0].match(deconstructed_vals)
+        subpatterns[0].match(deconstructed_vals)
       end
     end
 
     def inspect
-      "#<#{self.class.name}: deconstructor=#{@deconstructor.inspect}, subpatterns=#{@subpatterns.inspect}>"
+      "#<#{self.class.name}: deconstructor=#{@deconstructor.inspect}, subpatterns=#{subpatterns.inspect}>"
     end
   end
 
@@ -423,14 +425,14 @@ module PatternMatch
 
     def validate
       super
-      raise MalformedPatternError if @subpatterns.empty?
+      raise MalformedPatternError if subpatterns.empty?
       raise MalformedPatternError unless @parent.kind_of?(HasOrderedSubPatterns)
     end
 
     private
 
     def make_rewind(n)
-      PatternRewind.new(n, @subpatterns[0], directly_quantified? ? @next.next : @next)
+      PatternRewind.new(n, subpatterns[0], directly_quantified? ? @next.next : @next)
     end
 
     def repeating_match(vals, is_greedy)
@@ -458,30 +460,30 @@ module PatternMatch
     end
 
     def with_rewind(rewind)
-      @subpatterns[-1].next = rewind
+      subpatterns[-1].next = rewind
       yield rewind
     ensure
-      @subpatterns[-1].next = nil
+      subpatterns[-1].next = nil
     end
   end
 
   class PatternAnd < PatternElement
     def match(vals)
       super do |val|
-        @subpatterns.all? {|i| i.match([val]) }
+        subpatterns.all? {|i| i.match([val]) }
       end
     end
 
     def validate
       super
-      raise MalformedPatternError if @subpatterns.empty?
+      raise MalformedPatternError if subpatterns.empty?
     end
   end
 
   class PatternOr < PatternElement
     def match(vals)
       super do |val|
-        @subpatterns.find do |i|
+        subpatterns.find do |i|
           begin
             i.match([val])
           rescue PatternNotMatch
@@ -493,7 +495,7 @@ module PatternMatch
 
     def validate
       super
-      raise MalformedPatternError if @subpatterns.empty?
+      raise MalformedPatternError if subpatterns.empty?
       raise MalformedPatternError unless vars.empty?
     end
   end
@@ -502,7 +504,7 @@ module PatternMatch
     def match(vals)
       super do |val|
         begin
-          ! @subpatterns[0].match([val])
+          ! subpatterns[0].match([val])
         rescue PatternNotMatch
           true
         end
@@ -511,7 +513,7 @@ module PatternMatch
 
     def validate
       super
-      raise MalformedPatternError unless @subpatterns.length == 1
+      raise MalformedPatternError unless subpatterns.length == 1
       raise MalformedPatternError unless vars.empty?
     end
   end
