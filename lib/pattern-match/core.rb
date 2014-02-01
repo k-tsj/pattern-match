@@ -9,6 +9,8 @@ module PatternMatch
   end
 
   class ::Object
+    private
+
     def pattern_matcher(*subpatterns)
       PatternObjectDeconstructor.new(self, *subpatterns)
     end
