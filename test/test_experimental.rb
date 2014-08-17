@@ -85,6 +85,16 @@ class TestExperimental < Test::Unit::TestCase
     end
   end
 
+  def test_matcher_class_set
+    match([Set[0, 1, 2], Set[3, 4]]) do
+      with(_[Set.(a, b), Set.(c)], guard { a + b * c == 2 } ) do
+        assert_equal(2, a)
+        assert_equal(0, b)
+        assert_equal(3, c)
+      end
+    end
+  end
+
   def test_object_assert_pattern
     assert_equal([0], [0].assert_pattern('_[Fixnum]'))
     assert_equal([0], [0].assert_pattern('_[a & Fixnum], guard { a.even? }'))

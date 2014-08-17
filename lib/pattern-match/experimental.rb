@@ -1,4 +1,6 @@
 require 'pattern-match/core'
+require 'continuation'
+require 'set'
 
 raise LoadError, 'Module#prepend required' unless Module.respond_to?(:prepend, true)
 
@@ -73,6 +75,36 @@ module PatternMatch
              end
       variables = Hash[syms.map {|i| [i, PatternVariable.new(i)] }]
       Hash[variables.merge(hash).map {|k, v| [k, v.kind_of?(Pattern) ? v : PatternValue.new(v)] }]
+    end
+  end
+
+  class << Set
+    def pattern_matcher(*subpatterns)
+      PatternSetDeconstructor.new(self, *subpatterns)
+    end
+  end
+
+  class PatternSetDeconstructor < PatternDeconstructor
+    def initialize(klass, *subpatterns)
+      super(*subpatterns)
+      @klass = klass
+    end
+
+    def match(vals)
+      super do |val|
+        next false unless val.kind_of?(@klass)
+        members = val.to_a
+        next false unless subpatterns.length <= members.length
+        members.permutation(subpatterns.length).find do |perm|
+          cont = nil
+          if callcc {|c| cont = c; perm.zip(subpatterns).all? {|i, pat| pat.match([i]) } }
+            save_choice_point(cont)
+            true
+          else
+            false
+          end
+        end
+      end
     end
   end
 
