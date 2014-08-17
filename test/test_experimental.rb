@@ -1,12 +1,12 @@
 require_relative 'helper'
-require 'test/unit'
+require 'minitest/autorun'
 require_relative '../lib/pattern-match'
 begin
   require_relative '../lib/pattern-match/experimental'
 rescue LoadError
 end
 
-class TestExperimental < Test::Unit::TestCase
+class TestExperimental < MiniTest::Test
   def test_matcher_attribute_matcher
     person_class = Struct.new(:name, :age) do
       include PatternMatch::AttributeMatcher
@@ -61,7 +61,7 @@ class TestExperimental < Test::Unit::TestCase
     match({a: 0, b: 1}) do
       with(Hash.(:a, :b, b: b2)) do
         assert_equal(0, a)
-        assert_raise(NameError) { b }
+        assert_raises(NameError) { b }
         assert_equal(1, b2)
       end
       with(_) { flunk }
@@ -78,7 +78,7 @@ class TestExperimental < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(Object.(a, b)) {}
       end
@@ -98,7 +98,7 @@ class TestExperimental < Test::Unit::TestCase
   def test_object_assert_pattern
     assert_equal([0], [0].assert_pattern('_[Fixnum]'))
     assert_equal([0], [0].assert_pattern('_[a & Fixnum], guard { a.even? }'))
-    assert_raise(PatternMatch::NoMatchingPatternError) do
+    assert_raises(PatternMatch::NoMatchingPatternError) do
       [0, 1].assert_pattern('_[Fixnum]')
     end
   end

@@ -1,8 +1,8 @@
 require_relative 'helper'
-require 'test/unit'
+require 'minitest/autorun'
 require_relative '../lib/pattern-match'
 
-class TestStandard < Test::Unit::TestCase
+class TestStandard < MiniTest::Test
   def test_basic
     this = self
     ret = match([0, 1, 2, 3]) do
@@ -18,10 +18,10 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
     assert_equal(4, ret)
-    assert_raise(NameError) { a }
-    assert_raise(NameError) { b }
+    assert_raises(NameError) { a }
+    assert_raises(NameError) { b }
 
-    assert_raise(PatternMatch::NoMatchingPatternError) do
+    assert_raises(PatternMatch::NoMatchingPatternError) do
       match(0) do
         with(1) { flunk }
         with(2) { flunk }
@@ -39,7 +39,7 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(ArgumentError) do
+    assert_raises(ArgumentError) do
       match(0) do
         p 1
       end
@@ -63,17 +63,17 @@ class TestStandard < Test::Unit::TestCase
             end
             assert_equal(1, a)
             assert_equal(2, b)
-            assert_raise(NameError) { c }
+            assert_raises(NameError) { c }
           end
         end
         assert_equal(0, a)
-        assert_raise(NameError) { b }
-        assert_raise(NameError) { c }
+        assert_raises(NameError) { b }
+        assert_raises(NameError) { c }
       end
     end
-    assert_raise(NameError) { a }
-    assert_raise(NameError) { b }
-    assert_raise(NameError) { c }
+    assert_raises(NameError) { a }
+    assert_raises(NameError) { b }
+    assert_raises(NameError) { c }
   end
 
   def test_lexical_scoping(rec_call = false, f = nil)
@@ -90,7 +90,7 @@ class TestStandard < Test::Unit::TestCase
         end
       end
     else
-      assert_raise(NameError) { a }
+      assert_raises(NameError) { a }
       assert_equal(0, f.())
       match(1) do
         with(a) do
@@ -119,12 +119,12 @@ class TestStandard < Test::Unit::TestCase
   def test_uscore
     match([0, 1, Fixnum]) do
       with(_[_, ! _(Float), _(Fixnum, :==)]) do
-        assert_raise(NameError) { _ }
+        assert_raises(NameError) { _ }
       end
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(_(0, :==, nil)) {}
       end
@@ -228,25 +228,25 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(___) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(_[___]) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(_[_[___]]) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(_[a, ___, ___]) {}
       end
@@ -410,25 +410,25 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(Seq()) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(0) do
         with(_[Seq()]) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match([0]) do
         with(_[a & Seq(0)]) {}
       end
     end
 
-    assert_raise(NotImplementedError) do
+    assert_raises(NotImplementedError) do
       match([0]) do
         with(_[Seq(a & Fixnum, ___), ___]) {}
       end
@@ -483,7 +483,7 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(a | b) {}
       end
@@ -494,19 +494,19 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(! a) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(a | ___) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(a & ___) {}
       end
@@ -527,25 +527,25 @@ class TestStandard < Test::Unit::TestCase
       with(_) { flunk }
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(And()) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(Or()) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(Not()) {}
       end
     end
 
-    assert_raise(PatternMatch::MalformedPatternError) do
+    assert_raises(PatternMatch::MalformedPatternError) do
       match(1) do
         with(Not(0, 1)) {}
       end
@@ -557,14 +557,14 @@ class TestStandard < Test::Unit::TestCase
   end
 
   def test_match_too_many_arguments
-    assert_raise(ArgumentError) do
+    assert_raises(ArgumentError) do
       match(0, 1) do
       end
     end
   end
 
   def test_deconstructor_class
-    assert_raise(NotImplementedError) do
+    assert_raises(NotImplementedError) do
       c = Class.new
       match(0) do
         with(c.(a)) do
