@@ -112,4 +112,31 @@ class TestExperimental < MiniTest::Test
       with(_) { flunk }
     end
   end
+
+  def test_quantifier_with_backtracking
+    match([[0, 0], [0, 1]]) do
+      with(_[_[*a, *_], _[*a, *_]]) do
+        assert_equal([0], a)
+      end
+      with(_) { flunk }
+    end
+
+    match([[0, 1], 2]) do
+      with(_[_[*a, *b], c], guard { a.empty? }) do
+        assert_equal([], a)
+        assert_equal([0, 1], b)
+        assert_equal(2, c)
+      end
+      with(_) { flunk }
+    end
+  end
+
+  def test_sequence_with_backtracking
+    match([[0, 0, 0], [0, 1, 2]]) do
+      with(_[_[Seq(a), ___, *_], _[Seq(a), ___, *_]]) do
+        assert_equal([0], a)
+      end
+      with(_) { flunk }
+    end
+  end
 end if defined? PatternMatch::AttributeMatcher

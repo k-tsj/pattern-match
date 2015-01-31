@@ -5,6 +5,50 @@ require 'set'
 raise LoadError, 'Module#prepend required' unless Module.respond_to?(:prepend, true)
 
 module PatternMatch
+  class Pattern
+    module Backtrackable
+      def match(vals)
+        matched = super
+        if root? and not matched and not choice_points.empty?
+          restore_choice_point
+        end
+        matched
+      end
+
+      def choice_points
+        if root?
+          @choice_points ||= []
+        else
+          @parent.choice_points
+        end
+      end
+
+      private
+
+      def repeating_match(vals, is_greedy)
+        super do |vs, rest|
+          cont = nil
+          if callcc {|c| cont = c; yield vs, rest }
+            save_choice_point(cont)
+            true
+          else
+            false
+          end
+        end
+      end
+
+      def save_choice_point(choice_point)
+        choice_points.push(choice_point)
+      end
+
+      def restore_choice_point
+        choice_points.pop.call(false)
+      end
+    end
+
+    prepend Backtrackable
+  end
+
   module Deconstructable
     remove_method :call
     def call(*subpatterns)
