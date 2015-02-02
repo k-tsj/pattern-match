@@ -159,6 +159,11 @@ module PatternMatch
     end
 
     prepend Module.new {
+      def initialize(name)
+        super
+        @converter = nil
+      end
+
       private
 
       def bind(val)
