@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov'
   s.extra_rdoc_files = ['README.rdoc']
   s.rdoc_options     = ['--main', 'README.rdoc']
+  s.licenses         = ['2-clause BSDL', "Ruby's"]
 end
