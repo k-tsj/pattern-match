@@ -19,9 +19,10 @@ or
  $ bundle install --path vendor/bundle
 
 == Basic Usage
-pattern-match library provides Kernel#match.
+pattern-match library provides <code>Object#match</code>.
 
  require 'pattern-match'
+ using PatternMatch
 
  match(object) do
    with(pattern[, guard]) do

@@ -1,6 +1,12 @@
 require_relative 'helper'
 require 'minitest/autorun'
-require_relative '../lib/pattern-match'
+if ENV['DISABLE_REFINEMENTS']
+  require_relative '../lib/pattern-match/disable_refinements'
+  require_relative '../lib/pattern-match'
+else
+  require_relative '../lib/pattern-match'
+  using PatternMatch
+end
 
 class TestStandard < MiniTest::Test
   def test_basic
@@ -620,6 +626,20 @@ class TestStandard < MiniTest::Test
         assert_equal('c', d)
       end
       with(_) { flunk }
+    end
+  end
+
+  def test_refinements
+    if ENV['DISABLE_REFINEMENTS']
+      assert_kind_of(PatternMatch.const_get(:Pattern), eval('Class.()', TOPLEVEL_BINDING))
+      assert_equal(0, eval('match(0) { with(_) { 0 } }', TOPLEVEL_BINDING))
+    else
+      assert_raises(NoMethodError) do
+        eval('Class.()', TOPLEVEL_BINDING)
+      end
+      assert_raises(NoMethodError) do
+        eval('match(0) { with(_) { 0 } }', TOPLEVEL_BINDING)
+      end
     end
   end
 end

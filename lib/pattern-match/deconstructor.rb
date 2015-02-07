@@ -1,60 +1,78 @@
-require 'pattern-match/core'
+require 'pattern-match/version'
 
-class Class
-  include PatternMatch::Deconstructable
+module PatternMatch
+  refine Object do
+    private
 
-  def deconstruct(val)
-    raise NotImplementedError, "need to define `#{__method__}'"
+    def pattern_matcher(*subpatterns)
+      PatternObjectDeconstructor.new(self, *subpatterns)
+    end
   end
 
-  private
+  module Deconstructable
+    using PatternMatch if respond_to?(:using, true)
 
-  def accept_self_instance_only(val)
-    raise PatternMatch::PatternNotMatch unless val.kind_of?(self)
+    def call(*subpatterns)
+      pattern_matcher(*subpatterns)
+    end
   end
-end
 
-class << Array
-  def deconstruct(val)
-    accept_self_instance_only(val)
-    val
+  refine Class do
+    include PatternMatch::Deconstructable
+
+    def deconstruct(val)
+      raise NotImplementedError, "need to define `#{__method__}'"
+    end
+
+    private
+
+    def accept_self_instance_only(val)
+      raise PatternMatch::PatternNotMatch unless val.kind_of?(self)
+    end
   end
-end
 
-class << Struct
-  def deconstruct(val)
-    accept_self_instance_only(val)
-    val.values
+  refine Array.singleton_class do
+    def deconstruct(val)
+      accept_self_instance_only(val)
+      val
+    end
   end
-end
 
-class << Complex
-  def deconstruct(val)
-    accept_self_instance_only(val)
-    val.rect
+  refine Struct.singleton_class do
+    def deconstruct(val)
+      accept_self_instance_only(val)
+      val.values
+    end
   end
-end
 
-class << Rational
-  def deconstruct(val)
-    accept_self_instance_only(val)
-    [val.numerator, val.denominator]
+  refine Complex.singleton_class do
+    def deconstruct(val)
+      accept_self_instance_only(val)
+      val.rect
+    end
   end
-end
 
-class << MatchData
-  def deconstruct(val)
-    accept_self_instance_only(val)
-    val.captures.empty? ? [val[0]] : val.captures
+  refine Rational.singleton_class do
+    def deconstruct(val)
+      accept_self_instance_only(val)
+      [val.numerator, val.denominator]
+    end
   end
-end
 
-class Regexp
-  include PatternMatch::Deconstructable
+  refine MatchData.singleton_class do
+    def deconstruct(val)
+      accept_self_instance_only(val)
+      val.captures.empty? ? [val[0]] : val.captures
+    end
+  end
 
-  def deconstruct(val)
-    m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)
-    raise PatternMatch::PatternNotMatch unless m
-    m.captures.empty? ? [m[0]] : m.captures
+  refine Regexp do
+    include PatternMatch::Deconstructable
+
+    def deconstruct(val)
+      m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)
+      raise PatternMatch::PatternNotMatch unless m
+      m.captures.empty? ? [m[0]] : m.captures
+    end
   end
 end

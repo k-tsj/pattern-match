@@ -1,20 +1,6 @@
-require 'pattern-match/version'
+require 'pattern-match/deconstructor'
 
 module PatternMatch
-  module Deconstructable
-    def call(*subpatterns)
-      pattern_matcher(*subpatterns)
-    end
-  end
-
-  class ::Object
-    private
-
-    def pattern_matcher(*subpatterns)
-      PatternObjectDeconstructor.new(self, *subpatterns)
-    end
-  end
-
   module HasOrderedSubPatterns
     private
 
@@ -213,6 +199,8 @@ module PatternMatch
 
   class PatternObjectDeconstructor < PatternDeconstructor
     include HasOrderedSubPatterns
+
+    using PatternMatch if respond_to?(:using, true)
 
     def initialize(deconstructor, *subpatterns)
       super(*subpatterns)
@@ -536,6 +524,8 @@ module PatternMatch
       when 0
         uscore = PatternVariable.new(:_)
         class << uscore
+          using PatternMatch if respond_to?(:using, true)
+
           def [](*args)
             Array.call(*args)
           end
@@ -651,26 +641,27 @@ module PatternMatch
     end
     private_constant :Env
   end
-end
 
-module Kernel
-  private
+  refine Object do
 
-  def match(*vals, &block)
-    do_match = Proc.new do |val|
-      env = PatternMatch.const_get(:Env).new(self, val)
-      catch(:exit_match) do
-        env.instance_eval(&block)
-        raise PatternMatch::NoMatchingPatternError
+    private
+
+    def match(*vals, &block)
+      do_match = Proc.new do |val|
+        env = Env.new(self, val)
+        catch(:exit_match) do
+          env.instance_eval(&block)
+          raise NoMatchingPatternError
+        end
       end
-    end
-    case vals.length
-    when 0
-      do_match
-    when 1
-      do_match.(vals[0])
-    else
-      raise ArgumentError, "wrong number of arguments (#{vals.length} for 0..1)"
+      case vals.length
+      when 0
+        do_match
+      when 1
+        do_match.(vals[0])
+      else
+        raise ArgumentError, "wrong number of arguments (#{vals.length} for 0..1)"
+      end
     end
   end
 end

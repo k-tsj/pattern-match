@@ -1,6 +1,12 @@
 require_relative 'helper'
 require 'minitest/autorun'
-require_relative '../lib/pattern-match'
+if ENV['DISABLE_REFINEMENTS']
+  require_relative '../lib/pattern-match/disable_refinements'
+  require_relative '../lib/pattern-match'
+else
+  require_relative '../lib/pattern-match'
+  using PatternMatch
+end
 begin
   require_relative '../lib/pattern-match/experimental'
 rescue LoadError

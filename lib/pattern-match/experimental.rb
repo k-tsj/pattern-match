@@ -50,6 +50,8 @@ module PatternMatch
   end
 
   module Deconstructable
+    using PatternMatch if respond_to?(:using, true)
+
     remove_method :call
     def call(*subpatterns)
       if Object == self
@@ -178,6 +180,8 @@ class Hash
 end
 
 class Object
+  using PatternMatch if respond_to?(:using, true)
+
   def assert_pattern(pattern)
     match(self) do
       Kernel.eval("with(#{pattern}) { self }", Kernel.binding)
