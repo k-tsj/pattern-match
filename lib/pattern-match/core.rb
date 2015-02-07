@@ -641,7 +641,6 @@ module PatternMatch
   end
 
   refine Object do
-
     private
 
     def match(*vals, &block)
