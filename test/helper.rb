@@ -1,3 +1,11 @@
+require 'test/unit/assertions'
+
+module Test::Unit::Assertions
+  def pass
+    assert(true)
+  end
+end
+
 begin
   if ENV['COVERAGE']
     require 'simplecov'

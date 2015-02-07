@@ -1,5 +1,5 @@
 require_relative 'helper'
-require 'minitest/autorun'
+require 'test-unit'
 if ENV['DISABLE_REFINEMENTS']
   require_relative '../lib/pattern-match/disable_refinements'
   require_relative '../lib/pattern-match'
@@ -12,7 +12,7 @@ begin
 rescue LoadError
 end
 
-class TestExperimental < MiniTest::Test
+class TestExperimental < Test::Unit::TestCase
   def test_matcher_attribute_matcher
     person_class = Struct.new(:name, :age) do
       include PatternMatch::AttributeMatcher

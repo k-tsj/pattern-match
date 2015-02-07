@@ -1,5 +1,5 @@
 require_relative 'helper'
-require 'minitest/autorun'
+require 'test-unit'
 if ENV['DISABLE_REFINEMENTS']
   require_relative '../lib/pattern-match/disable_refinements'
   require_relative '../lib/pattern-match'
@@ -8,7 +8,7 @@ else
   using PatternMatch
 end
 
-class TestStandard < MiniTest::Test
+class TestStandard < Test::Unit::TestCase
   def test_basic
     this = self
     ret = match([0, 1, 2, 3]) do
@@ -83,7 +83,7 @@ class TestStandard < MiniTest::Test
   end
 
   def test_lexical_scoping(rec_call = false, f = nil)
-    skip 'not supported'
+    omit 'not supported'
     unless rec_call
       match(0) do
         with(a) do
@@ -111,7 +111,7 @@ class TestStandard < MiniTest::Test
   end
 
   def test_override_singleton_method
-    skip 'Module#prepend not supported' unless Module.respond_to?(:prepend, true)
+    omit 'Module#prepend is not defined' unless Module.respond_to?(:prepend, true)
     match(0) do
       with(_test_override_singleton_method) do
         def self._test_override_singleton_method
