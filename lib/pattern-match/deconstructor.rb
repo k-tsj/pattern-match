@@ -8,10 +8,12 @@ module PatternMatch
       PatternObjectDeconstructor.new(self, *subpatterns)
     end
   end
+end
 
+using PatternMatch if respond_to?(:using, true)
+
+module PatternMatch
   module Deconstructable
-    using PatternMatch if respond_to?(:using, true)
-
     def call(*subpatterns)
       pattern_matcher(*subpatterns)
     end

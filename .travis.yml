@@ -16,10 +16,6 @@ matrix:
       env: TEST="test/test_*"
     - rvm: 1.9.3
       env: TEST="test/test_standard.rb"
-    - rvm: 2.0.0
-      env: TEST="test/test_*"
-    - rvm: 2.0.0
-      env: TEST="test/test_standard.rb"
     - rvm: jruby-19mode
       env: TEST="test/test_*"
     - rvm: jruby-19mode

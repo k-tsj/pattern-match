@@ -1,5 +1,7 @@
 require 'pattern-match/deconstructor'
 
+using PatternMatch if respond_to?(:using, true)
+
 module PatternMatch
   module HasOrderedSubPatterns
     private
@@ -199,8 +201,6 @@ module PatternMatch
 
   class PatternObjectDeconstructor < PatternDeconstructor
     include HasOrderedSubPatterns
-
-    using PatternMatch if respond_to?(:using, true)
 
     def initialize(deconstructor, *subpatterns)
       super(*subpatterns)
@@ -524,8 +524,6 @@ module PatternMatch
       when 0
         uscore = PatternVariable.new(:_)
         class << uscore
-          using PatternMatch if respond_to?(:using, true)
-
           def [](*args)
             Array.(*args)
           end

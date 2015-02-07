@@ -4,6 +4,8 @@ require 'set'
 
 raise LoadError, 'Module#prepend required' unless Module.respond_to?(:prepend, true)
 
+using PatternMatch if respond_to?(:using, true)
+
 module PatternMatch
   class Pattern
     module Backtrackable
@@ -50,8 +52,6 @@ module PatternMatch
   end
 
   module Deconstructable
-    using PatternMatch if respond_to?(:using, true)
-
     remove_method :call
     def call(*subpatterns)
       if Object == self
@@ -180,8 +180,6 @@ class Hash
 end
 
 class Object
-  using PatternMatch if respond_to?(:using, true)
-
   def assert_pattern(pattern)
     match(self) do
       Kernel.eval("with(#{pattern}) { self }", Kernel.binding)
