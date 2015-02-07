@@ -527,7 +527,7 @@ module PatternMatch
           using PatternMatch if respond_to?(:using, true)
 
           def [](*args)
-            Array.call(*args)
+            Array.(*args)
           end
 
           def vars
