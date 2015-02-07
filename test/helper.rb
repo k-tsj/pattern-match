@@ -6,6 +6,12 @@ module Test::Unit::Assertions
   end
 end
 
+module TestUtils
+  def eval_in_unrefined_scope(expr)
+    eval(expr)
+  end
+end
+
 begin
   if ENV['COVERAGE']
     require 'simplecov'

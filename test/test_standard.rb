@@ -9,6 +9,8 @@ else
 end
 
 class TestStandard < Test::Unit::TestCase
+  include TestUtils
+
   def test_basic
     this = self
     ret = match([0, 1, 2, 3]) do
@@ -631,14 +633,14 @@ class TestStandard < Test::Unit::TestCase
 
   def test_refinements
     if ENV['DISABLE_REFINEMENTS']
-      assert_kind_of(PatternMatch.const_get(:Pattern), eval('Class.()', TOPLEVEL_BINDING))
-      assert_equal(0, eval('match(0) { with(_) { 0 } }', TOPLEVEL_BINDING))
+      assert_kind_of(PatternMatch.const_get(:Pattern), eval_in_unrefined_scope('Class.()'))
+      assert_equal(0, eval_in_unrefined_scope('match(0) { with(_) { 0 } }'))
     else
       assert_raises(NoMethodError) do
-        eval('Class.()', TOPLEVEL_BINDING)
+        eval_in_unrefined_scope('Class.()')
       end
       assert_raises(NoMethodError) do
-        eval('match(0) { with(_) { 0 } }', TOPLEVEL_BINDING)
+        eval_in_unrefined_scope('match(0) { with(_) { 0 } }')
       end
     end
   end
