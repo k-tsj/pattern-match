@@ -629,16 +629,14 @@ module PatternMatch
   class MalformedPatternError < PatternMatchError; end
 
   # Make Pattern and its subclasses, etc private.
-  if respond_to?(:private_constant)
-    constants.each do |c|
-      klass = const_get(c)
-      next unless klass.kind_of?(Class)
-      if klass <= Pattern
-        private_constant c
-      end
+  constants.each do |c|
+    klass = const_get(c)
+    next unless klass.kind_of?(Class)
+    if klass <= Pattern
+      private_constant c
     end
-    private_constant :Env, :HasOrderedSubPatterns
   end
+  private_constant :Env, :HasOrderedSubPatterns
 
   refine Object do
     private
