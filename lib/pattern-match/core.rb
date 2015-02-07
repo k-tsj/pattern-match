@@ -628,7 +628,7 @@ module PatternMatch
   class NoMatchingPatternError < PatternMatchError; end
   class MalformedPatternError < PatternMatchError; end
 
-  # Make Pattern and its subclasses/Env private.
+  # Make Pattern and its subclasses, etc private.
   if respond_to?(:private_constant)
     constants.each do |c|
       klass = const_get(c)
@@ -637,7 +637,7 @@ module PatternMatch
         private_constant c
       end
     end
-    private_constant :Env
+    private_constant :Env, :HasOrderedSubPatterns
   end
 
   refine Object do
