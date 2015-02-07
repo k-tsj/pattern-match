@@ -1,14 +1,14 @@
 require_relative 'helper'
 require 'test-unit'
 if ENV['DISABLE_REFINEMENTS']
-  require_relative '../lib/pattern-match/disable_refinements'
-  require_relative '../lib/pattern-match'
+  require 'pattern-match/disable_refinements'
+  require 'pattern-match'
 else
-  require_relative '../lib/pattern-match'
+  require 'pattern-match'
   using PatternMatch
 end
 begin
-  require_relative '../lib/pattern-match/experimental'
+  require 'pattern-match/experimental'
 rescue LoadError
 end
 
