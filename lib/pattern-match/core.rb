@@ -483,7 +483,7 @@ module PatternMatch
     def with(pat_or_val, guard_proc = nil, &block)
       ctx = @ctx
       pat = pat_or_val.kind_of?(Pattern) ? pat_or_val : PatternValue.new(pat_or_val)
-      pat.append(PatternCondition.new { check_for_duplicate_vars(pat.vars) })
+      pat.append(PatternCondition.new { validate_uniqueness_of_dup_vars(pat.vars) })
       if guard_proc
         pat.append(PatternCondition.new { with_quasibinding(ctx, pat.quasibinding, &guard_proc) })
       end
@@ -566,17 +566,8 @@ module PatternMatch
       PatternNot.new(*subpatterns)
     end
 
-    def check_for_duplicate_vars(vars)
-      vars.each_with_object({}) do |v, h|
-        if h.has_key?(v.name)
-          unless h[v.name] == v.val
-            return false
-          end
-        else
-          h[v.name] = v.val
-        end
-      end
-      true
+    def validate_uniqueness_of_dup_vars(vars)
+      vars.group_by(&:name).all? {|_, dup_vars| dup_vars.map(&:val).uniq.length == 1 }
     end
 
     class QuasiBindingModule < ::Module
