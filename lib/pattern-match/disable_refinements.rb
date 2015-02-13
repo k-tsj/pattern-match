@@ -1,5 +1,5 @@
 class Module
-  methods = Module.instance_methods(false) + Module.private_instance_methods(false)
+  methods = instance_methods(false) + private_instance_methods(false)
   if methods.include?(:refine)
     if methods.include?(:__refine_orig)
       raise LoadError, "can't re-define Module#refine"
