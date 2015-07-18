@@ -1,4 +1,5 @@
 .bundle
+Gemfile.local
 Gemfile.lock
 coverage
 pkg/*
