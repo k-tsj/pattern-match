@@ -18,6 +18,9 @@ module PatternMatch
   class Pattern
     attr_accessor :parent, :next, :prev
 
+    attr_reader :subpatterns
+    private :subpatterns
+
     def initialize(*subpatterns)
       @parent = nil
       @next = nil
@@ -118,8 +121,6 @@ module PatternMatch
     end
 
     private
-
-    attr_reader :subpatterns
 
     def repeating_match(vals, is_greedy)
       quantifier = @next
