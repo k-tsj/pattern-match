@@ -27,7 +27,7 @@ module PatternMatch
     end
 
     def vars
-      subpatterns.map(&:vars).flatten
+      subpatterns.flat_map(&:vars)
     end
 
     def ancestors
@@ -490,7 +490,7 @@ module PatternMatch
       pat.validate
       if pat.match([@val])
         ret = with_quasibinding(ctx, pat.quasibinding, &block)
-        ::Kernel.throw(:exit_match, ret)
+        ::Kernel.throw(self, ret)
       else
         nil
       end
@@ -635,7 +635,7 @@ module PatternMatch
     def match(*vals, &block)
       do_match = Proc.new do |val|
         env = Env.new(self, val)
-        catch(:exit_match) do
+        catch(env) do
           env.instance_eval(&block)
           raise NoMatchingPatternError
         end
