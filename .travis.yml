@@ -25,3 +25,5 @@ matrix:
       env: DISABLE_REFINEMENTS=1 TEST="test/test_*"
   allow_failures:
     - rvm: ruby-head
+before_install:
+ - gem update bundler --no-document
