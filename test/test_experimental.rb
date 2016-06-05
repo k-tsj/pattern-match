@@ -145,4 +145,28 @@ class TestExperimental < Test::Unit::TestCase
       with(_) { flunk }
     end
   end
+
+  def test_fallthrough
+    omit unless respond_to?(:fallthrough, true)
+
+    match(0) do
+      with(a) do
+        b = 1
+        assert_equal 0, a
+        assert_equal 1, b
+        fallthrough
+      end
+      with(_[a, c]) do
+        assert_equal 0, a
+        assert_equal 1, b
+        assert_nil c
+      end
+    end
+
+    assert_raises(PatternMatch::PatternMatchError) do
+      match(0) do
+        with(_) { fallthrough }
+      end
+    end
+  end
 end if defined? PatternMatch::AttributeMatcher

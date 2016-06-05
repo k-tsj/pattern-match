@@ -185,4 +185,18 @@ class Object
       Kernel.eval("with(#{pattern}) { self }", Kernel.binding)
     end
   end
+
+  begin
+    require 'binding_of_caller'
+
+    private
+
+    def fallthrough
+      b = binding.of_caller(1)
+      vars = b.eval('local_variables')
+      quasibinding = Hash[*vars.map {|i| [i, b.local_variable_get(i)] }.flatten(1)]
+      throw PatternMatch::FALLTHROUGH_TAG, quasibinding
+    end
+  rescue LoadError
+  end
 end

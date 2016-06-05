@@ -473,10 +473,17 @@ module PatternMatch
     end
   end
 
+  FALLTHROUGH_TAG = Object.new
+
   class Env < BasicObject
     def initialize(ctx, val)
       @ctx = ctx
       @val = val
+      @fallthrough_quasibinding = nil
+    end
+
+    def fallthrough_called?
+      !! @fallthrough_quasibinding
     end
 
     private
@@ -489,9 +496,22 @@ module PatternMatch
         pat.append(PatternCondition.new { with_quasibinding(ctx, pat.quasibinding, &guard_proc) })
       end
       pat.validate
-      if pat.match([@val])
-        ret = with_quasibinding(ctx, pat.quasibinding, &block)
+      if fallthrough_called?
+        ret = with_quasibinding(ctx, pat.quasibinding.merge(@fallthrough_quasibinding), &block)
         ::Kernel.throw(self, ret)
+      end
+      if pat.match([@val])
+        ret = nil
+        fallthrough_called = true
+        block_quasibinding = ::Kernel.catch(::PatternMatch::FALLTHROUGH_TAG) do
+          ret = with_quasibinding(ctx, pat.quasibinding, &block)
+          fallthrough_called = false
+        end
+        if fallthrough_called
+          @fallthrough_quasibinding = pat.quasibinding.merge(block_quasibinding)
+        else
+          ::Kernel.throw(self, ret)
+        end
       else
         nil
       end
@@ -638,6 +658,9 @@ module PatternMatch
         env = Env.new(self, val)
         catch(env) do
           env.instance_eval(&block)
+          if env.fallthrough_called?
+            raise PatternMatchError, 'cannot fallthrough final case in match'
+          end
           raise NoMatchingPatternError
         end
       end
