@@ -154,7 +154,7 @@ It is equivalent to <code>()</code> in regular expression.
   * KeyMatcher
     * Hash.()
   * AttributeMatcher
-* fallthrough(requires binding_of_caller gem)
+* fallthrough (requires binding_of_caller gem)
 
 To use experimental features, you must also require 'pattern-match/experimental'.
 See source code for more details.
