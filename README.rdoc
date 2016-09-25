@@ -48,14 +48,14 @@ An ordinary object is a value pattern.
 The pattern matches an object such that <code>pattern === object</code>.
 
  match(0) do
-   with(Fixnum) { :match } #=> :match
+   with(Integer) { :match } #=> :match
  end
 
 If you want to use an another method of matching,
 you have to use <code>_</code> as follows.
 
  match(0) do
-   with(_(Fixnum, :==)) { :match }
+   with(_(Integer, :==)) { :match }
  end #=> NoMatchingPatternError
 
 === Deconstructor
@@ -112,7 +112,7 @@ all objects bound to variable must be equal.
 <code>And</code>, <code>Or</code>, <code>Not</code> return and/or/not pattern.
 
  match([0, [1]]) do
-   with(_[a & Fixnum, ! (_[2] | _[3])]) { a } #=> 0
+   with(_[a & Integer, ! (_[2] | _[3])]) { a } #=> 0
  end
 
  match(0) do
@@ -129,7 +129,7 @@ They are equivalent to <code>*</code>, <code>*?</code>,
 You can write as <code>*pattern</code> instead of <code>pattern, \___</code>.
 
  match([:a, 0, :b, :c]) do
-   with(_[a & Symbol, ___, b & Fixnum, c & Symbol, ___]) do
+   with(_[a & Symbol, ___, b & Integer, c & Symbol, ___]) do
      a #=> [:a]
      b #=> 0
      c #=> [:b, :c]
@@ -142,7 +142,7 @@ You can write as <code>*pattern</code> instead of <code>pattern, \___</code>.
 It is equivalent to <code>()</code> in regular expression.
 
  match([:a, 0, :b, 1]) do
-   with(_[Seq(a & Symbol, b & Fixnum), ___]) do
+   with(_[Seq(a & Symbol, b & Integer), ___]) do
      a #=> [:a, :b]
      b #=> [0, 1]
    end

@@ -102,10 +102,10 @@ class TestExperimental < Test::Unit::TestCase
   end
 
   def test_object_assert_pattern
-    assert_equal([0], [0].assert_pattern('_[Fixnum]'))
-    assert_equal([0], [0].assert_pattern('_[a & Fixnum], guard { a.even? }'))
+    assert_equal([0], [0].assert_pattern('_[Integer]'))
+    assert_equal([0], [0].assert_pattern('_[a & Integer], guard { a.even? }'))
     assert_raises(PatternMatch::NoMatchingPatternError) do
-      [0, 1].assert_pattern('_[Fixnum]')
+      [0, 1].assert_pattern('_[Integer]')
     end
   end
 

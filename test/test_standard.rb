@@ -17,7 +17,7 @@ class TestStandard < Test::Unit::TestCase
       with(nil) { flunk }
       with(_[]) { flunk }
       with(_[a, 0, 0, b]) { flunk }
-      with(_[a, Fixnum , 2, b]) do
+      with(_[a, Integer , 2, b]) do
         assert_equal(this, self)
         assert_equal(0, a)
         assert_equal(3, b)
@@ -125,8 +125,8 @@ class TestStandard < Test::Unit::TestCase
   end
 
   def test_uscore
-    match([0, 1, Fixnum]) do
-      with(_[_, ! _(Float), _(Fixnum, :==)]) do
+    match([0, 1, Integer]) do
+      with(_[_, ! _(Float), _(Integer, :==)]) do
         assert_raises(NameError) { _ }
       end
       with(_) { flunk }
@@ -277,7 +277,7 @@ class TestStandard < Test::Unit::TestCase
     end
 
     match([[0, 1, :a, 'A'], [2, :b, :c, 'B'], ['C'], 3]) do
-      with(_[_[a & Fixnum, ___, b & Symbol, ___, c], ___, d]) do
+      with(_[_[a & Integer, ___, b & Symbol, ___, c], ___, d]) do
         assert_equal([[0, 1], [2], []], a)
         assert_equal([[:a], [:b, :c], []], b)
         assert_equal(['A', 'B', 'C'], c)
@@ -287,7 +287,7 @@ class TestStandard < Test::Unit::TestCase
     end
 
     match([0, 1, 2, 4, 5]) do
-      with(_[*a, b & Fixnum, __2, *c], guard { b.all?(&:even?) }) do
+      with(_[*a, b & Integer, __2, *c], guard { b.all?(&:even?) }) do
         assert_equal([0, 1], a)
         assert_equal([2, 4], b)
         assert_equal([5], c)
@@ -345,7 +345,7 @@ class TestStandard < Test::Unit::TestCase
     end
 
     match([0, :a, 1, 2, :b, 3]) do
-      with(_[Seq(a & Fixnum, b & Symbol, c & Fixnum), ___]) do
+      with(_[Seq(a & Integer, b & Symbol, c & Integer), ___]) do
         assert_equal([0, 2], a)
         assert_equal([:a, :b], b)
         assert_equal([1, 3], c)
@@ -354,12 +354,12 @@ class TestStandard < Test::Unit::TestCase
     end
 
     match([0, :a, 1, 2, :b, :c]) do
-      with(_[Seq(a & Fixnum, b & Symbol, c & Fixnum), ___]) { flunk }
+      with(_[Seq(a & Integer, b & Symbol, c & Integer), ___]) { flunk }
       with(_) { pass }
     end
 
     match([0, 1, :a, 2, 3, :b, 4, 5]) do
-      with(_[a, Seq(b & Fixnum, c & Symbol, d & Fixnum), ___, e]) do
+      with(_[a, Seq(b & Integer, c & Symbol, d & Integer), ___, e]) do
         assert_equal(0, a)
         assert_equal([1, 3], b)
         assert_equal([:a, :b], c)
@@ -422,7 +422,7 @@ class TestStandard < Test::Unit::TestCase
 
     assert_raises(NotImplementedError) do
       match([0]) do
-        with(_[Seq(a & Fixnum, ___), ___]) {}
+        with(_[Seq(a & Integer, ___), ___]) {}
       end
     end
   end
