@@ -262,8 +262,9 @@ Pattern guard can be specified as a second argument to <code>with</code>.
    end
  end
 
-* {RubyTextProcessing}[https://code.google.com/p/tokland/wiki/RubyTextProcessing]
+* {tokland/RubyTextProcessing}[https://github.com/tokland/tokland/wiki/RubyTextProcessing]
 * {yhara/tapl-ruby}[https://github.com/yhara/tapl-ruby]
+* {k-tsj/power_assert}[https://github.com/k-tsj/power_assert/blob/8e9e0399a032936e3e3f3c1f06e0d038565f8044/lib/power_assert.rb]
 
 == Reference
 * {Pattern Matching in Ruby (at Sapporo RubyKaigi 2012) // Speaker Deck}[https://speakerdeck.com/k_tsj/patternmatchinginruby]
