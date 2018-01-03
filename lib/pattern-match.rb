@@ -1,6 +1,6 @@
 # pattern-match.rb
 #
-# Copyright (C) 2012-2015 Kazuki Tsujimoto, All rights reserved.
+# Copyright (C) 2012 Kazuki Tsujimoto
 
 require 'pattern-match/version'
 require 'pattern-match/deconstructor'
