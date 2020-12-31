@@ -1,0 +1,26 @@
+on: [ push, pull_request ]
+
+jobs:
+  test:
+    name: >-
+      Test (${{ matrix.ruby-version }} / ${{ matrix.os }} / DISABLE_REFINEMENTS: ${{ matrix.DISABLE_REFINEMENTS }})
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: [ '3.0', 2.7, 2.6, 2.5, 2.4, head ]
+        os: [ ubuntu-latest, macos-latest ]
+        DISABLE_REFINEMENTS: [ 1, 0 ]
+    runs-on: ${{ matrix.os }}
+    env:
+      DISABLE_REFINEMENTS: ${{ matrix.DISABLE_REFINEMENTS }}
+    continue-on-error: ${{ matrix.ruby-version == 'head' }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+      - name: Run the test suite
+        run: |
+          bundle exec rake

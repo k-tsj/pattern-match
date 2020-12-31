@@ -1,11 +1,11 @@
 require_relative 'helper'
 require 'test-unit'
-if ENV['DISABLE_REFINEMENTS']
-  require 'pattern-match/disable_refinements'
-  require 'pattern-match'
-else
+if ENV['DISABLE_REFINEMENTS'].to_i.zero?
   require 'pattern-match'
   using PatternMatch
+else
+  require 'pattern-match/disable_refinements'
+  require 'pattern-match'
 end
 begin
   require 'pattern-match/experimental'

@@ -1,11 +1,11 @@
 require_relative 'helper'
 require 'test-unit'
-if ENV['DISABLE_REFINEMENTS']
-  require 'pattern-match/disable_refinements'
-  require 'pattern-match'
-else
+if ENV['DISABLE_REFINEMENTS'].to_i.zero?
   require 'pattern-match'
   using PatternMatch
+else
+  require 'pattern-match/disable_refinements'
+  require 'pattern-match'
 end
 
 class TestStandard < Test::Unit::TestCase
@@ -632,16 +632,16 @@ class TestStandard < Test::Unit::TestCase
   end
 
   def test_refinements
-    if ENV['DISABLE_REFINEMENTS']
-      assert_kind_of(PatternMatch.const_get(:Pattern), eval_in_unrefined_scope('Class.()'))
-      assert_equal(0, eval_in_unrefined_scope('match(0) { with(_) { 0 } }'))
-    else
+    if ENV['DISABLE_REFINEMENTS'].to_i.zero?
       assert_raises(NoMethodError) do
         eval_in_unrefined_scope('Class.()')
       end
       assert_raises(NoMethodError) do
         eval_in_unrefined_scope('match(0) { with(_) { 0 } }')
       end
+    else
+      assert_kind_of(PatternMatch.const_get(:Pattern), eval_in_unrefined_scope('Class.()'))
+      assert_equal(0, eval_in_unrefined_scope('match(0) { with(_) { 0 } }'))
     end
   end
 end
