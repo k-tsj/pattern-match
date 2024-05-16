@@ -1,14 +1,23 @@
 on: [ push, pull_request ]
 
 jobs:
+  ruby-versions:
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+      min_version: 2.4
   test:
+    needs: ruby-versions
     name: >-
       Test (${{ matrix.ruby-version }} / ${{ matrix.os }} / DISABLE_REFINEMENTS: ${{ matrix.DISABLE_REFINEMENTS }})
     strategy:
       fail-fast: false
       matrix:
-        ruby-version: [ '3.0', 2.7, 2.6, 2.5, 2.4, head ]
+        ruby-version: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
         os: [ ubuntu-latest, macos-latest ]
+        exclude:
+          - { os: macos-latest, ruby-version: 2.4 }
+          - { os: macos-latest, ruby-version: 2.5 }
         DISABLE_REFINEMENTS: [ 1, 0 ]
     runs-on: ${{ matrix.os }}
     env:

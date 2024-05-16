@@ -20,7 +20,11 @@ module PatternMatch
   end
 
   refine Class do
-    include PatternMatch::Deconstructable
+    if respond_to?(:import_methods, true)
+      import_methods PatternMatch::Deconstructable
+    else
+      include PatternMatch::Deconstructable
+    end
 
     def deconstruct(val)
       raise NotImplementedError, "need to define `#{__method__}'"
@@ -69,7 +73,11 @@ module PatternMatch
   end
 
   refine Regexp do
-    include PatternMatch::Deconstructable
+    if respond_to?(:import_methods, true)
+      import_methods PatternMatch::Deconstructable
+    else
+      include PatternMatch::Deconstructable
+    end
 
     def deconstruct(val)
       m = Regexp.new("\\A#{source}\\z", options).match(val.to_s)

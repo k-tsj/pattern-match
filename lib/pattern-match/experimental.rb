@@ -62,6 +62,12 @@ module PatternMatch
     end
   end
 
+  refine Class do
+    if respond_to?(:import_methods, true)
+      import_methods PatternMatch::Deconstructable
+    end
+  end
+
   module AttributeMatcher
     def self.included(klass)
       class << klass
